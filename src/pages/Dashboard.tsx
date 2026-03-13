@@ -1,21 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, User, RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search } from "lucide-react";
+import { Shield, User, RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { sampleSchemes, SCHEME_CATEGORIES } from "@/data/schemes";
 import { toast } from "sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { auth, profile, savedSchemes, logout } = useAuth();
+  const { auth, profile, savedSchemes, logout, loadProfileFromServer } = useAuth();
+
+  // Load latest profile from server on mount
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      loadProfileFromServer();
+    }
+  }, [auth.isAuthenticated]);
 
   const saved = useMemo(() => {
     return sampleSchemes.filter(s => savedSchemes.includes(s.id));
   }, [savedSchemes]);
+
+  // Count new matching schemes (mock: random 1-4 for returning users)
+  const newSchemeCount = auth.isReturningUser ? Math.max(1, Math.floor(Math.random() * 4) + 1) : 0;
 
   const handleLogout = () => {
     logout();

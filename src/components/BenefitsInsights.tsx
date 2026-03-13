@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MatchedScheme } from "@/types";
 import { SCHEME_CATEGORIES } from "@/data/schemes";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface BenefitScheme {
   id: string;

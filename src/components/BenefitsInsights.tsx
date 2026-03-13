@@ -350,11 +350,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
               <div className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                 <p className="text-xs leading-relaxed text-accent-foreground/80">
-                  You're eligible for{" "}
-                  <strong className="text-foreground">{unclaimedSchemes.length} scheme{unclaimedSchemes.length !== 1 ? "s" : ""}</strong>{" "}
-                  worth{" "}
-                  <strong className="text-foreground">{formatINR(unclaimedAmount)}</strong>{" "}
-                  that you haven't applied for yet.
+                  {t("eligible_not_applied", { count: unclaimedSchemes.length, amount: formatINR(unclaimedAmount) })}
                 </p>
               </div>
             </motion.div>

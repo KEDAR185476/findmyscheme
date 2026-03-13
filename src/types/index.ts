@@ -69,6 +69,9 @@ export interface Scheme {
   applicationUrl: string;
   deadline: string;
   documentsRequired: string[];
+  source: string;
+  targetBeneficiaries: string;
+  launchDate?: string;
 }
 
 export type SchemeCategory =

@@ -334,7 +334,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
             {/* Header */}
             <div className="mb-5 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-accent" />
-              <span className="text-sm font-semibold text-foreground">Unused Benefits</span>
+              <span className="text-sm font-semibold text-foreground">{t("unused_benefits")}</span>
             </div>
 
             {/* Opportunity bar */}

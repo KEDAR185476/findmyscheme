@@ -14,9 +14,11 @@ import { matchScheme } from "@/lib/matchScheme";
 import { toast } from "sonner";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { AppHeader } from "@/components/AppHeader";
+import { useTranslation } from "react-i18next";
 
 const Schemes = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { profile, savedSchemes, toggleSaveScheme } = useAuth();
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
@@ -44,9 +46,9 @@ const Schemes = () => {
 
   return (
     <PageTransition>
-      <AppHeader title="Scheme Results">
+      <AppHeader title={t("scheme_results")}>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={() => navigate("/dashboard")}>
-          <Home className="mr-1.5 h-4 w-4" /> Dashboard
+          <Home className="mr-1.5 h-4 w-4" /> {t("dashboard")}
         </Button>
       </AppHeader>
 
@@ -60,11 +62,11 @@ const Schemes = () => {
                   <Target className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">{matchedSchemes.length} Schemes Found</h1>
+                  <h1 className="text-2xl font-bold tracking-tight">{t("schemes_found", { count: matchedSchemes.length })}</h1>
                   <p className="text-sm text-muted-foreground">
                     {profile.state && (
                       <span className="inline-flex items-center gap-1">
-                        <MapPin className="h-3 w-3" /> {profile.state} + Central schemes
+                        <MapPin className="h-3 w-3" /> {profile.state} + {t("central_schemes")}
                       </span>
                     )}
                   </p>
@@ -78,11 +80,11 @@ const Schemes = () => {
             <div className="mb-6 flex flex-col gap-3 sm:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search schemes..." className="h-11 rounded-xl pl-10" />
+                <Input value={search} onChange={e => setSearch(e.target.value)} placeholder={t("search_schemes")} className="h-11 rounded-xl pl-10" />
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button size="sm" variant={categoryFilter === "" ? "default" : "outline"} onClick={() => setCategoryFilter("")} className="rounded-full">
-                  All
+                  {t("all")}
                 </Button>
                 {Object.entries(SCHEME_CATEGORIES).map(([key, cat]) => (
                   <Button key={key} size="sm" variant={categoryFilter === key ? "default" : "outline"} onClick={() => setCategoryFilter(key === categoryFilter ? "" : key)} className="rounded-full">
@@ -99,11 +101,11 @@ const Schemes = () => {
               <div className="mb-8">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-success/10 text-success text-sm">✓</span>
-                  Eligible Schemes ({eligible.length})
+                  {t("eligible_schemes")} ({eligible.length})
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   {eligible.map((scheme, i) => (
-                    <SchemeCard key={scheme.id} scheme={scheme} index={i} savedSchemes={savedSchemes} toggleSaveScheme={toggleSaveScheme} onClick={() => setSelectedScheme(scheme)} />
+                    <SchemeCard key={scheme.id} scheme={scheme} index={i} savedSchemes={savedSchemes} toggleSaveScheme={toggleSaveScheme} onClick={() => setSelectedScheme(scheme)} t={t} />
                   ))}
                 </div>
               </div>
@@ -116,12 +118,12 @@ const Schemes = () => {
               <div className="mb-8">
                 <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-warning/10 text-warning text-sm">◌</span>
-                  Nearly Eligible ({nearlyEligible.length})
-                  <span className="text-xs font-normal text-muted-foreground">— minor conditions may apply</span>
+                  {t("nearly_eligible")} ({nearlyEligible.length})
+                  <span className="text-xs font-normal text-muted-foreground">{t("minor_conditions")}</span>
                 </h2>
                 <div className="grid gap-4 md:grid-cols-2">
                   {nearlyEligible.map((scheme, i) => (
-                    <SchemeCard key={scheme.id} scheme={scheme} index={i} savedSchemes={savedSchemes} toggleSaveScheme={toggleSaveScheme} onClick={() => setSelectedScheme(scheme)} />
+                    <SchemeCard key={scheme.id} scheme={scheme} index={i} savedSchemes={savedSchemes} toggleSaveScheme={toggleSaveScheme} onClick={() => setSelectedScheme(scheme)} t={t} />
                   ))}
                 </div>
               </div>
@@ -131,8 +133,8 @@ const Schemes = () => {
           {filtered.length === 0 && (
             <StaggerItem>
               <div className="py-16 text-center">
-                <p className="text-lg text-muted-foreground">No schemes match your current filters.</p>
-                <Button variant="link" onClick={() => { setSearch(""); setCategoryFilter(""); }}>Clear filters</Button>
+                <p className="text-lg text-muted-foreground">{t("no_schemes_match")}</p>
+                <Button variant="link" onClick={() => { setSearch(""); setCategoryFilter(""); }}>{t("clear_filters")}</Button>
               </div>
             </StaggerItem>
           )}
@@ -149,7 +151,7 @@ const Schemes = () => {
                   <Badge className={SCHEME_CATEGORIES[selectedScheme.category]?.color}>
                     {SCHEME_CATEGORIES[selectedScheme.category]?.icon} {SCHEME_CATEGORIES[selectedScheme.category]?.label}
                   </Badge>
-                  <Badge variant="outline">{selectedScheme.matchScore}% Match</Badge>
+                  <Badge variant="outline">{selectedScheme.matchScore}% {t("match")}</Badge>
                   <Badge variant="secondary" className="text-xs">
                     <MapPin className="mr-1 h-3 w-3" />{selectedScheme.state}
                   </Badge>
@@ -159,19 +161,19 @@ const Schemes = () => {
               </DialogHeader>
               <div className="space-y-5 mt-4">
                 <div>
-                  <h4 className="mb-1.5 text-sm font-semibold">Description</h4>
+                  <h4 className="mb-1.5 text-sm font-semibold">{t("description")}</h4>
                   <p className="text-sm text-muted-foreground leading-relaxed">{selectedScheme.description}</p>
                 </div>
                 <div className="rounded-xl bg-primary/5 p-4">
-                  <h4 className="mb-1 text-sm font-semibold text-primary">Benefits</h4>
+                  <h4 className="mb-1 text-sm font-semibold text-primary">{t("benefits")}</h4>
                   <p className="text-sm font-medium text-primary">{selectedScheme.benefits}</p>
                 </div>
                 <div>
-                  <h4 className="mb-1.5 text-sm font-semibold">Target Beneficiaries</h4>
+                  <h4 className="mb-1.5 text-sm font-semibold">{t("target_beneficiaries")}</h4>
                   <p className="text-sm text-muted-foreground">{selectedScheme.targetBeneficiaries}</p>
                 </div>
                 <div>
-                  <h4 className="mb-2 text-sm font-semibold">Documents Required</h4>
+                  <h4 className="mb-2 text-sm font-semibold">{t("documents_required")}</h4>
                   <div className="flex flex-wrap gap-2">
                     {selectedScheme.documentsRequired.map(d => (
                       <Badge key={d} variant="secondary" className="text-xs">
@@ -182,11 +184,11 @@ const Schemes = () => {
                 </div>
                 <div className="flex items-center justify-between border-t pt-4">
                   <div>
-                    <h4 className="mb-1 text-xs font-semibold text-muted-foreground">Deadline</h4>
+                    <h4 className="mb-1 text-xs font-semibold text-muted-foreground">{t("deadline")}</h4>
                     <p className="text-sm">{selectedScheme.deadline}</p>
                   </div>
                   <div className="text-right">
-                    <h4 className="mb-1 text-xs font-semibold text-muted-foreground">Source</h4>
+                    <h4 className="mb-1 text-xs font-semibold text-muted-foreground">{t("source")}</h4>
                     <p className="text-xs text-muted-foreground flex items-center gap-1">
                       <Globe className="h-3 w-3" /> {selectedScheme.source}
                     </p>
@@ -195,7 +197,7 @@ const Schemes = () => {
                 <div className="flex gap-2 pt-2">
                   <Button className="flex-1 h-11 rounded-lg shadow-sm" asChild>
                     <a href={selectedScheme.applicationUrl} target="_blank" rel="noopener noreferrer">
-                      Apply Now <ExternalLink className="ml-2 h-4 w-4" />
+                      {t("apply_now")} <ExternalLink className="ml-2 h-4 w-4" />
                     </a>
                   </Button>
                   <Button variant="outline" size="icon" className="h-11 w-11 rounded-lg" onClick={() => toggleSaveScheme(selectedScheme.id)}>
@@ -203,7 +205,7 @@ const Schemes = () => {
                   </Button>
                   <Button variant="outline" size="icon" className="h-11 w-11 rounded-lg" onClick={() => {
                     navigator.share?.({ title: selectedScheme.name, text: selectedScheme.description, url: selectedScheme.applicationUrl })
-                      .catch(() => { navigator.clipboard.writeText(selectedScheme.applicationUrl); toast("Link copied!"); });
+                      .catch(() => { navigator.clipboard.writeText(selectedScheme.applicationUrl); toast(t("link_copied")); });
                   }}>
                     <Share2 className="h-4 w-4" />
                   </Button>
@@ -217,12 +219,13 @@ const Schemes = () => {
   );
 };
 
-const SchemeCard = ({ scheme, index, savedSchemes, toggleSaveScheme, onClick }: {
+const SchemeCard = ({ scheme, index, savedSchemes, toggleSaveScheme, onClick, t }: {
   scheme: MatchedScheme;
   index: number;
   savedSchemes: string[];
   toggleSaveScheme: (id: string) => void;
   onClick: () => void;
+  t: (key: string) => string;
 }) => (
   <motion.div
     initial={{ opacity: 0, y: 16 }}
@@ -244,7 +247,7 @@ const SchemeCard = ({ scheme, index, savedSchemes, toggleSaveScheme, onClick }: 
             <h3 className="mb-1 font-semibold leading-tight tracking-tight">{scheme.name}</h3>
             <p className="text-xs text-muted-foreground">{scheme.department}</p>
             <p className="mt-2 line-clamp-2 text-sm text-muted-foreground leading-relaxed">{scheme.benefits}</p>
-            <p className="mt-1.5 text-[10px] text-muted-foreground/50">Source: {scheme.source}</p>
+            <p className="mt-1.5 text-[10px] text-muted-foreground/50">{t("source")}: {scheme.source}</p>
           </div>
           <div className="flex flex-col items-center gap-2.5">
             <div className="relative h-14 w-14">

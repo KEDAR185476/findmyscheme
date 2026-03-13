@@ -1,21 +1,31 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Shield, User, RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search } from "lucide-react";
+import { Shield, User, RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search, Bell } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { sampleSchemes, SCHEME_CATEGORIES } from "@/data/schemes";
 import { toast } from "sonner";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { auth, profile, savedSchemes, logout } = useAuth();
+  const { auth, profile, savedSchemes, logout, loadProfileFromServer } = useAuth();
+
+  // Load latest profile from server on mount
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      loadProfileFromServer();
+    }
+  }, [auth.isAuthenticated]);
 
   const saved = useMemo(() => {
     return sampleSchemes.filter(s => savedSchemes.includes(s.id));
   }, [savedSchemes]);
+
+  // Count new matching schemes (mock: random 1-4 for returning users)
+  const newSchemeCount = auth.isReturningUser ? Math.max(1, Math.floor(Math.random() * 4) + 1) : 0;
 
   const handleLogout = () => {
     logout();
@@ -50,6 +60,21 @@ const Dashboard = () => {
               Welcome back{profile.name ? `, ${profile.name}` : ""}! 👋
             </h1>
             <p className="mt-1 text-muted-foreground">Here's your scheme discovery dashboard.</p>
+            {newSchemeCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="mt-3 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 p-3"
+              >
+                <Bell className="h-5 w-5 text-accent-foreground" />
+                <span className="text-sm font-medium">
+                  New schemes matching your profile: <strong>{newSchemeCount}</strong>
+                </span>
+                <Button size="sm" variant="outline" className="ml-auto" onClick={() => navigate("/schemes")}>
+                  View <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </motion.div>
+            )}
           </div>
 
           {/* Quick Actions */}

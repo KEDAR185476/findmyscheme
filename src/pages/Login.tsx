@@ -7,6 +7,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, ArrowLeft, Phone } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 const Login = () => {
@@ -17,40 +18,60 @@ const Login = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     if (phone.length !== 10) {
       toast.error("Please enter a valid 10-digit phone number");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    try {
+      const { data, error } = await supabase.functions.invoke("otp", {
+        body: { phone, action: "send" },
+      });
+      if (error) throw error;
       setStep("otp");
-      toast.success("OTP sent! (Mock: enter any 6 digits)");
-    }, 1000);
+      toast.success("OTP sent! (Dev mode: use 123456)");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to send OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleVerifyOtp = () => {
+  const handleVerifyOtp = async () => {
     if (otp.length !== 6) {
       toast.error("Please enter the 6-digit OTP");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login(phone);
-      const existingProfile = localStorage.getItem("fms_profile");
-      if (existingProfile) {
-        const profile = JSON.parse(existingProfile);
-        if (profile.name) {
-          navigate("/dashboard");
-          toast.success("Welcome back!");
-          return;
-        }
+    try {
+      const { data, error } = await supabase.functions.invoke("otp", {
+        body: { phone, action: "verify", code: otp },
+      });
+
+      if (error) throw error;
+
+      if (!data?.success) {
+        toast.error(data?.error || "Invalid OTP");
+        setLoading(false);
+        return;
       }
-      navigate("/upload");
-      toast.success("Login successful!");
-    }, 800);
+
+      const isReturning = data.isReturningUser;
+      login(phone, isReturning, data.profile);
+
+      if (isReturning) {
+        navigate("/dashboard");
+        toast.success(`Welcome back${data.profile?.name ? ` ${data.profile.name}` : ""}!`);
+      } else {
+        navigate("/upload");
+        toast.success("Login successful! Let's set up your profile.");
+      }
+    } catch (e: any) {
+      toast.error(e.message || "Failed to verify OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

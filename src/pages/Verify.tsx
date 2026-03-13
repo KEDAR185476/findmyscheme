@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Shield, CheckCircle2, AlertCircle, ArrowRight } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { INDIAN_STATES } from "@/types";
 import { toast } from "sonner";
 
@@ -51,7 +52,7 @@ const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
 
 const Verify = () => {
   const navigate = useNavigate();
-  const { profile, setProfile } = useAuth();
+  const { profile, setProfile, syncProfileToServer } = useAuth();
   const [fields, setFields] = useState<Record<string, { value: string; confidence: number }>>({});
   const [processing, setProcessing] = useState(true);
 
@@ -101,6 +102,8 @@ const Verify = () => {
       }
     }
     setProfile(prev => ({ ...prev, ...updates }));
+    // Sync to server
+    syncProfileToServer();
     navigate("/questions");
     toast.success("Profile verified! Let's refine your eligibility.");
   };

@@ -76,7 +76,7 @@ const incomeMap: Record<string, number> = {
 
 const Questions = () => {
   const navigate = useNavigate();
-  const { profile, setProfile } = useAuth();
+  const { profile, setProfile, syncProfileToServer } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentQ, setCurrentQ] = useState(0);
   const [input, setInput] = useState("");
@@ -138,6 +138,8 @@ const Questions = () => {
     if (nextQ >= questions.length) {
       // Done
       setTyping(true);
+      // Mark onboarding complete and sync to server
+      syncProfileToServer();
       setTimeout(() => {
         setMessages(prev => [
           ...prev,

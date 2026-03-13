@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
 import { UserProfile } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -9,12 +10,14 @@ interface AuthState {
 
 interface AuthContextType {
   auth: AuthState;
-  login: (phone: string) => void;
+  login: (phone: string, isReturning: boolean, serverProfile?: any) => void;
   logout: () => void;
   profile: UserProfile;
   setProfile: React.Dispatch<React.SetStateAction<UserProfile>>;
   savedSchemes: string[];
   toggleSaveScheme: (schemeId: string) => void;
+  syncProfileToServer: () => Promise<void>;
+  loadProfileFromServer: () => Promise<void>;
 }
 
 const defaultProfile: UserProfile = {
@@ -25,6 +28,49 @@ const defaultProfile: UserProfile = {
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Map server profile (snake_case) to client profile (camelCase)
+const mapServerToClient = (sp: any): UserProfile => ({
+  name: sp.name || "",
+  dob: sp.dob || "",
+  gender: sp.gender || "",
+  phone: sp.phone || "",
+  address: sp.address || "",
+  state: sp.state || "",
+  district: sp.district || "",
+  income: sp.income || null,
+  category: sp.category || "",
+  casteCategory: sp.caste_category || "",
+  panNumber: sp.pan_number || "",
+  aadhaarNumber: sp.aadhaar_number || "",
+  employmentStatus: sp.employment_status || "",
+  educationLevel: sp.education_level || "",
+  maritalStatus: sp.marital_status || "",
+  hasDisability: sp.has_disability || false,
+  landOwnership: sp.land_ownership || "",
+  hasBankAccount: sp.has_bank_account || false,
+});
+
+// Map client profile to server format
+const mapClientToServer = (cp: UserProfile) => ({
+  name: cp.name || null,
+  dob: cp.dob || null,
+  gender: cp.gender || null,
+  address: cp.address || null,
+  state: cp.state || null,
+  district: cp.district || null,
+  income: cp.income,
+  category: cp.category || null,
+  caste_category: cp.casteCategory || null,
+  pan_number: cp.panNumber || null,
+  aadhaar_number: cp.aadhaarNumber || null,
+  employment_status: cp.employmentStatus || null,
+  education_level: cp.educationLevel || null,
+  marital_status: cp.maritalStatus || null,
+  has_disability: cp.hasDisability,
+  land_ownership: cp.landOwnership || null,
+  has_bank_account: cp.hasBankAccount,
+});
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>(() => {
@@ -42,12 +88,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return stored ? JSON.parse(stored) : [];
   });
 
-  const login = useCallback((phone: string) => {
-    const existingProfile = localStorage.getItem("fms_profile");
-    const newAuth = { isAuthenticated: true, phone, isReturningUser: !!existingProfile };
+  const login = useCallback((phone: string, isReturning: boolean, serverProfile?: any) => {
+    const newAuth = { isAuthenticated: true, phone, isReturningUser: isReturning };
     setAuth(newAuth);
     localStorage.setItem("fms_auth", JSON.stringify(newAuth));
-    if (!existingProfile) {
+
+    if (serverProfile && isReturning) {
+      const mapped = mapServerToClient(serverProfile);
+      setProfile(mapped);
+      localStorage.setItem("fms_profile", JSON.stringify(mapped));
+    } else if (!isReturning) {
       const p = { ...defaultProfile, phone };
       setProfile(p);
       localStorage.setItem("fms_profile", JSON.stringify(p));
@@ -59,21 +109,65 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem("fms_auth");
   }, []);
 
-  const toggleSaveScheme = useCallback((schemeId: string) => {
+  const syncProfileToServer = useCallback(async () => {
+    if (!auth.phone) return;
+    try {
+      const serverData = { ...mapClientToServer(profile), onboarding_complete: true };
+      await supabase.functions.invoke("profile", {
+        body: { phone: auth.phone, action: "update", profile: serverData },
+      });
+    } catch (e) {
+      console.error("Failed to sync profile:", e);
+    }
+  }, [auth.phone, profile]);
+
+  const loadProfileFromServer = useCallback(async () => {
+    if (!auth.phone) return;
+    try {
+      const { data } = await supabase.functions.invoke("profile", {
+        body: { phone: auth.phone, action: "get" },
+      });
+      if (data?.profile) {
+        const mapped = mapServerToClient(data.profile);
+        setProfile(mapped);
+        localStorage.setItem("fms_profile", JSON.stringify(mapped));
+      }
+      if (data?.savedSchemes) {
+        setSavedSchemes(data.savedSchemes);
+        localStorage.setItem("fms_saved", JSON.stringify(data.savedSchemes));
+      }
+    } catch (e) {
+      console.error("Failed to load profile:", e);
+    }
+  }, [auth.phone]);
+
+  const toggleSaveScheme = useCallback(async (schemeId: string) => {
+    // Optimistic update
     setSavedSchemes(prev => {
       const next = prev.includes(schemeId) ? prev.filter(id => id !== schemeId) : [...prev, schemeId];
       localStorage.setItem("fms_saved", JSON.stringify(next));
       return next;
     });
-  }, []);
 
-  // Persist profile changes
+    // Sync to server
+    if (auth.phone) {
+      try {
+        await supabase.functions.invoke("profile", {
+          body: { phone: auth.phone, action: "save_scheme", scheme_id: schemeId },
+        });
+      } catch (e) {
+        console.error("Failed to toggle save:", e);
+      }
+    }
+  }, [auth.phone]);
+
+  // Persist profile changes locally
   React.useEffect(() => {
     localStorage.setItem("fms_profile", JSON.stringify(profile));
   }, [profile]);
 
   return (
-    <AuthContext.Provider value={{ auth, login, logout, profile, setProfile, savedSchemes, toggleSaveScheme }}>
+    <AuthContext.Provider value={{ auth, login, logout, profile, setProfile, savedSchemes, toggleSaveScheme, syncProfileToServer, loadProfileFromServer }}>
       {children}
     </AuthContext.Provider>
   );

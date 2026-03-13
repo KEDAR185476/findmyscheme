@@ -1,0 +1,7 @@
+project_id = "evezpurilirijukvfcbl"
+
+[functions.otp]
+verify_jwt = false
+
+[functions.profile]
+verify_jwt = false

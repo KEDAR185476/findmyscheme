@@ -193,7 +193,6 @@ export const DocumentUploadCard = ({
                   )}
                 </div>
               )}
-              )}
               {isError && (
                 <p className="mt-0.5 text-xs text-destructive">Processing failed — try again</p>
               )}

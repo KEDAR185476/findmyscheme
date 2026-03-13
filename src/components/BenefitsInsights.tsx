@@ -156,7 +156,7 @@ function DonutChart({
         className="fill-muted-foreground"
         style={{ fontSize: "11px" }}
       >
-        Total Benefits
+        {centerLabel}
       </text>
     </svg>
   );

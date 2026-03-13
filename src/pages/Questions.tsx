@@ -1,77 +1,14 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Shield, Send, ArrowRight, Bot, User } from "lucide-react";
+import { Shield, Send, Bot, User, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ChatMessage } from "@/types";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-
-// Mock AI question flow — these are generated based on missing profile fields
-const generateQuestions = (profile: any): { question: string; key: string; suggestions: string[] }[] => {
-  const qs: { question: string; key: string; suggestions: string[] }[] = [];
-
-  if (!profile.employmentStatus) {
-    qs.push({
-      question: "What is your current employment status?",
-      key: "employmentStatus",
-      suggestions: ["Employed (Salaried)", "Self-Employed", "Farmer", "Daily Wage Worker", "Unemployed", "Student", "Retired"],
-    });
-  }
-  if (!profile.occupationType) {
-    qs.push({
-      question: "What type of occupation are you in?",
-      key: "occupationType",
-      suggestions: ["Agriculture", "Government Service", "Private Sector", "Business/Trade", "Skilled Labour", "Unskilled Labour", "Homemaker", "Not Applicable"],
-    });
-  }
-  if (!profile.educationLevel) {
-    qs.push({
-      question: "What is your highest level of education?",
-      key: "educationLevel",
-      suggestions: ["Below 10th", "10th Pass", "12th Pass", "Graduate", "Post Graduate", "Professional Degree"],
-    });
-  }
-  if (!profile.maritalStatus) {
-    qs.push({
-      question: "What is your marital status?",
-      key: "maritalStatus",
-      suggestions: ["Single", "Married", "Widowed", "Divorced"],
-    });
-  }
-  if (!profile.hasDisability && profile.hasDisability !== false) {
-    qs.push({
-      question: "Do you or any family member have a disability?",
-      key: "hasDisability",
-      suggestions: ["No", "Yes - Physical", "Yes - Visual", "Yes - Hearing", "Yes - Intellectual"],
-    });
-  }
-  if (!profile.landOwnership) {
-    qs.push({
-      question: "Do you own any agricultural land?",
-      key: "landOwnership",
-      suggestions: ["No land", "Below 1 acre", "1-5 acres", "Above 5 acres"],
-    });
-  }
-  if (!profile.hasBankAccount && profile.hasBankAccount !== true) {
-    qs.push({
-      question: "Do you have a bank account linked with Aadhaar?",
-      key: "hasBankAccount",
-      suggestions: ["Yes", "No", "Not sure"],
-    });
-  }
-  if (!profile.income && profile.income !== 0) {
-    qs.push({
-      question: "What is your approximate annual family income?",
-      key: "income",
-      suggestions: ["Below ₹1 lakh", "₹1-2.5 lakh", "₹2.5-5 lakh", "₹5-8 lakh", "Above ₹8 lakh"],
-    });
-  }
-
-  return qs;
-};
 
 const incomeMap: Record<string, number> = {
   "Below ₹1 lakh": 80000,
@@ -81,98 +18,160 @@ const incomeMap: Record<string, number> = {
   "Above ₹8 lakh": 1000000,
 };
 
+interface AIQuestion {
+  question: string;
+  key: string;
+  suggestions: string[];
+  complete: boolean;
+  greeting?: string;
+}
+
 const Questions = () => {
   const navigate = useNavigate();
   const { profile, setProfile, syncProfileToServer } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [currentQ, setCurrentQ] = useState(0);
+  const [currentQuestion, setCurrentQuestion] = useState<AIQuestion | null>(null);
   const [input, setInput] = useState("");
-  const [typing, setTyping] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [questionsAsked, setQuestionsAsked] = useState(0);
+  const [conversationHistory, setConversationHistory] = useState<{ role: string; content: string }[]>([]);
   const chatRef = useRef<HTMLDivElement>(null);
+  const initialized = useRef(false);
 
-  const questions = generateQuestions(profile);
-  const totalQuestions = questions.length;
-  const progress = totalQuestions > 0 ? ((currentQ) / totalQuestions) * 100 : 100;
+  const estimatedTotal = 6; // Estimated max questions
+  const progress = Math.min((questionsAsked / estimatedTotal) * 100, 95);
 
-  useEffect(() => {
-    if (questions.length === 0) {
-      navigate("/schemes");
-      return;
-    }
-    // Ask first question
-    if (messages.length === 0) {
-      setTyping(true);
-      setTimeout(() => {
-        setMessages([
-          {
-            id: "welcome",
-            role: "assistant",
-            content: `Hi${profile.name ? ` ${profile.name}` : ""}! I have a few quick questions to help find the best schemes for you. Let's begin!`,
-          },
-          {
-            id: "q-0",
-            role: "assistant",
-            content: questions[0].question,
-            suggestions: questions[0].suggestions,
-          },
-        ]);
-        setTyping(false);
-      }, 800);
-    }
-  }, []);
+  const fetchNextQuestion = useCallback(async (history: { role: string; content: string }[], currentProfile: any) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("smart-questions", {
+        body: { profile: currentProfile, conversationHistory: history },
+      });
 
-  useEffect(() => {
-    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, typing]);
+      if (error) throw error;
 
-  const handleAnswer = (answer: string) => {
-    const q = questions[currentQ];
-    if (!q) return;
+      if (data.error) {
+        // Handle rate limits / payment
+        toast.error(data.error);
+        setLoading(false);
+        return;
+      }
 
-    // Add user message
-    setMessages(prev => [...prev, { id: `u-${currentQ}`, role: "user", content: answer }]);
+      const q = data as AIQuestion;
 
-    // Update profile
-    let value: any = answer;
-    if (q.key === "hasDisability") value = answer !== "No";
-    if (q.key === "hasBankAccount") value = answer === "Yes";
-    if (q.key === "income") value = incomeMap[answer] || parseInt(answer.replace(/[^\d]/g, "")) || null;
-
-    setProfile(prev => ({ ...prev, [q.key]: value }));
-
-    const nextQ = currentQ + 1;
-
-    if (nextQ >= questions.length) {
-      // Done
-      setTyping(true);
-      // Mark onboarding complete and sync to server
-      syncProfileToServer();
-      setTimeout(() => {
+      if (q.complete) {
+        // AI says we have enough info
+        syncProfileToServer();
         setMessages(prev => [
           ...prev,
-          { id: "done", role: "assistant", content: "Thank you! I have enough information now. Let me find the best schemes for you! 🎉" },
+          ...(q.greeting ? [{ id: `g-done`, role: "assistant" as const, content: q.greeting }] : []),
+          { id: "done", role: "assistant" as const, content: "I have enough information now. Let me find the best government schemes for you! 🎉" },
         ]);
-        setTyping(false);
+        setLoading(false);
         setTimeout(() => {
           navigate("/schemes");
           toast.success("Profile complete! Showing your matched schemes.");
         }, 1500);
-      }, 600);
-    } else {
-      setCurrentQ(nextQ);
-      setTyping(true);
-      setTimeout(() => {
-        setMessages(prev => [
-          ...prev,
-          { id: `q-${nextQ}`, role: "assistant", content: questions[nextQ].question, suggestions: questions[nextQ].suggestions },
-        ]);
-        setTyping(false);
-      }, 500);
+        return;
+      }
+
+      setCurrentQuestion(q);
+      const newMessages: ChatMessage[] = [];
+      if (q.greeting) {
+        newMessages.push({ id: `g-${questionsAsked}`, role: "assistant", content: q.greeting });
+      }
+      newMessages.push({
+        id: `q-${questionsAsked}`,
+        role: "assistant",
+        content: q.question,
+        suggestions: q.suggestions,
+      });
+      setMessages(prev => [...prev, ...newMessages]);
+    } catch (err) {
+      console.error("Failed to fetch AI question:", err);
+      toast.error("Failed to generate question. Using fallback.");
+      // Fallback to basic questions
+      fallbackQuestion();
     }
-    setInput("");
+    setLoading(false);
+  }, [questionsAsked, syncProfileToServer, navigate]);
+
+  const fallbackQuestions: AIQuestion[] = [
+    { question: "What is your current employment status?", key: "employmentStatus", suggestions: ["Employed (Salaried)", "Self-Employed", "Farmer", "Student", "Unemployed", "Retired"], complete: false },
+    { question: "What is your highest level of education?", key: "educationLevel", suggestions: ["Below 10th", "10th Pass", "12th Pass", "Graduate", "Post Graduate"], complete: false },
+    { question: "Do you own any agricultural land?", key: "landOwnership", suggestions: ["No land", "Below 1 acre", "1-5 acres", "Above 5 acres"], complete: false },
+    { question: "Do you have a bank account linked with Aadhaar?", key: "hasBankAccount", suggestions: ["Yes", "No", "Not sure"], complete: false },
+  ];
+  const fallbackIndex = useRef(0);
+
+  const fallbackQuestion = () => {
+    const q = fallbackQuestions[fallbackIndex.current % fallbackQuestions.length];
+    fallbackIndex.current++;
+    // Skip if already answered
+    if ((profile as any)[q.key]) {
+      if (fallbackIndex.current < fallbackQuestions.length) {
+        fallbackQuestion();
+        return;
+      }
+      // All done
+      syncProfileToServer();
+      setMessages(prev => [...prev, { id: "done", role: "assistant", content: "Profile complete! Let me find schemes for you! 🎉" }]);
+      setTimeout(() => navigate("/schemes"), 1500);
+      return;
+    }
+    setCurrentQuestion(q);
+    setMessages(prev => [...prev, { id: `q-${questionsAsked}`, role: "assistant", content: q.question, suggestions: q.suggestions }]);
   };
 
-  const currentSuggestions = questions[currentQ]?.suggestions || [];
+  // Initialize
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant",
+        content: `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask you a few smart questions to find the best government schemes for you. Your answers help me personalize recommendations.`,
+      },
+    ]);
+
+    fetchNextQuestion([], profile);
+  }, []);
+
+  useEffect(() => {
+    chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, loading]);
+
+  const handleAnswer = async (answer: string) => {
+    if (!currentQuestion || loading) return;
+
+    // Add user message
+    setMessages(prev => [...prev, { id: `u-${questionsAsked}`, role: "user", content: answer }]);
+
+    // Update profile
+    let value: any = answer;
+    if (currentQuestion.key === "hasDisability") value = answer !== "No";
+    if (currentQuestion.key === "hasBankAccount") value = answer === "Yes";
+    if (currentQuestion.key === "income") value = incomeMap[answer] || parseInt(answer.replace(/[^\d]/g, "")) || null;
+
+    const updatedProfile = { ...profile, [currentQuestion.key]: value };
+    setProfile(prev => ({ ...prev, [currentQuestion.key]: value }));
+
+    // Update conversation history for AI context
+    const newHistory = [
+      ...conversationHistory,
+      { role: "assistant", content: currentQuestion.question },
+      { role: "user", content: answer },
+    ];
+    setConversationHistory(newHistory);
+    setQuestionsAsked(prev => prev + 1);
+    setCurrentQuestion(null);
+    setInput("");
+
+    // Fetch next AI question
+    await fetchNextQuestion(newHistory, updatedProfile);
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
@@ -181,7 +180,9 @@ const Questions = () => {
           <Shield className="h-5 w-5 text-primary" />
           <span className="font-bold">Smart Questions</span>
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{Math.min(currentQ + 1, totalQuestions)}/{totalQuestions}</span>
+            <span className="text-xs text-muted-foreground">
+              {questionsAsked} answered
+            </span>
             <Progress value={progress} className="h-1.5 w-24" />
           </div>
         </div>
@@ -208,16 +209,15 @@ const Questions = () => {
             ))}
           </AnimatePresence>
 
-          {typing && (
+          {loading && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Bot className="h-4 w-4" />
               </div>
               <div className="rounded-2xl border bg-card px-4 py-3">
-                <div className="flex gap-1">
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:0ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:150ms]" />
-                  <span className="h-2 w-2 animate-bounce rounded-full bg-muted-foreground [animation-delay:300ms]" />
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Thinking...
                 </div>
               </div>
             </motion.div>
@@ -228,9 +228,9 @@ const Questions = () => {
       {/* Suggestions + Input */}
       <div className="border-t bg-card p-4">
         <div className="mx-auto max-w-xl">
-          {currentSuggestions.length > 0 && !typing && (
+          {currentQuestion?.suggestions && !loading && (
             <div className="mb-3 flex flex-wrap gap-2">
-              {currentSuggestions.map(s => (
+              {currentQuestion.suggestions.map(s => (
                 <Button key={s} size="sm" variant="outline" className="rounded-full text-xs" onClick={() => handleAnswer(s)}>
                   {s}
                 </Button>
@@ -249,9 +249,9 @@ const Questions = () => {
               onChange={e => setInput(e.target.value)}
               placeholder="Type your answer..."
               className="flex-1"
-              disabled={typing || currentQ >= questions.length}
+              disabled={loading || !currentQuestion}
             />
-            <Button type="submit" size="icon" disabled={!input.trim() || typing}>
+            <Button type="submit" size="icon" disabled={!input.trim() || loading || !currentQuestion}>
               <Send className="h-4 w-4" />
             </Button>
           </form>

@@ -57,35 +57,29 @@ const Verify = () => {
   const [processing, setProcessing] = useState(true);
 
   useEffect(() => {
-    // Simulate OCR processing
-    const timer = setTimeout(() => {
-      const uploadedDocs: string[] = JSON.parse(localStorage.getItem("fms_uploaded_docs") || "[]");
-      const merged: Record<string, { value: string; confidence: number }> = {};
-
-      // Merge OCR data from all uploaded docs (later ones override earlier with higher confidence)
-      for (const docType of uploadedDocs) {
-        const data = mockOcrData[docType] || {};
-        for (const [key, val] of Object.entries(data)) {
-          if (!merged[key] || val.confidence > merged[key].confidence) {
-            merged[key] = val;
-          }
+    // Load real OCR-extracted fields from localStorage (set by Upload page)
+    const ocrFields = localStorage.getItem("fms_ocr_fields");
+    if (ocrFields) {
+      try {
+        const parsed = JSON.parse(ocrFields);
+        if (Object.keys(parsed).length > 0) {
+          setFields(parsed);
+          setProcessing(false);
+          return;
         }
+      } catch (e) {
+        console.error("Failed to parse OCR fields:", e);
       }
+    }
 
-      // If no docs uploaded, provide empty fields
-      if (Object.keys(merged).length === 0) {
-        setFields({
-          name: { value: "", confidence: 0 },
-          dob: { value: "", confidence: 0 },
-          gender: { value: "", confidence: 0 },
-          state: { value: "", confidence: 0 },
-        });
-      } else {
-        setFields(merged);
-      }
-      setProcessing(false);
-    }, 1500);
-    return () => clearTimeout(timer);
+    // No OCR data — provide empty fields for manual entry
+    setFields({
+      name: { value: "", confidence: 0 },
+      dob: { value: "", confidence: 0 },
+      gender: { value: "", confidence: 0 },
+      state: { value: "", confidence: 0 },
+    });
+    setProcessing(false);
   }, []);
 
   const updateField = (key: string, value: string) => {

@@ -171,12 +171,14 @@ const Dashboard = () => {
 
           {/* Quick Actions */}
           <StaggerItem>
-            <div className="mb-8 grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+            <div className="mb-8 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
               {[
                 { icon: FileText, title: "Update Documents", desc: "Upload new IDs", color: "bg-primary/10 text-primary", route: "/upload" },
                 { icon: RefreshCw, title: "Re-check Eligibility", desc: "AI-powered questions", color: "bg-accent/10 text-accent", route: "/questions" },
                 { icon: Search, title: "Browse All Schemes", desc: `${allMatched.length} matching`, color: "bg-success/10 text-success", route: "/schemes" },
                 { icon: Sparkles, title: "Explain Eligibility", desc: "AI graph analysis", color: "bg-primary/10 text-primary", route: "/explain" },
+                { icon: FlaskConical, title: "What-If Simulator", desc: "Digital twin lab", color: "bg-accent/10 text-accent", route: "/simulator" },
+                { icon: CalendarDays, title: "Welfare Timeline", desc: "Life stage planner", color: "bg-success/10 text-success", route: "/timeline" },
               ].map((action, i) => (
                 <Card
                   key={action.title}

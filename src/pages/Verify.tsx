@@ -48,10 +48,12 @@ const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "incom
 
 const Verify = () => {
   const navigate = useNavigate();
-  const { setProfile, syncProfileToServer } = useAuth();
+  const { auth, setProfile, syncProfileToServer } = useAuth();
   const [fields, setFields] = useState<Record<string, { value: string; confidence: number }>>({});
   const [processing, setProcessing] = useState(true);
   const [docsCleared, setDocsCleared] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationAlerts, setVerificationAlerts] = useState<string[]>([]);
 
   useEffect(() => {
     const ocrFields = localStorage.getItem("fms_ocr_fields");

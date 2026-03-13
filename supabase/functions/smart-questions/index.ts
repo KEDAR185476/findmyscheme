@@ -1,65 +1,171 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-serve(async (req) => {
+/**
+ * Determines which critical eligibility fields are still missing from the profile.
+ * Returns a list of missing field keys and a boolean indicating if we have enough data.
+ */
+function analyzeMissingFields(profile: Record<string, unknown>): {
+  missing: string[];
+  filled: string[];
+  hasEnoughData: boolean;
+} {
+  // Core fields that OCR should have filled
+  const ocrFields = ["name", "dob", "gender", "address", "state", "income"];
+  // Critical eligibility fields that require questions
+  const eligibilityFields = [
+    { key: "employmentStatus", critical: true },
+    { key: "educationLevel", critical: false },
+    { key: "occupationType", critical: false },
+    { key: "maritalStatus", critical: false },
+    { key: "residency", critical: false },
+    { key: "hasBankAccount", critical: false },
+    { key: "hasDisability", critical: false },
+    { key: "landOwnership", critical: false },
+    { key: "category", critical: false },
+  ];
+
+  const filled: string[] = [];
+  const missing: string[] = [];
+
+  for (const f of ocrFields) {
+    const val = profile[f];
+    if (val !== null && val !== undefined && val !== "") filled.push(f);
+  }
+
+  for (const f of eligibilityFields) {
+    const val = profile[f.key];
+    if (val !== null && val !== undefined && val !== "" && val !== false) {
+      filled.push(f.key);
+    } else {
+      missing.push(f.key);
+    }
+  }
+
+  // We have enough data if employment status is known (the single most impactful field)
+  // plus at least 4 OCR fields are present
+  const hasEmployment = filled.includes("employmentStatus");
+  const ocrCount = ocrFields.filter(f => filled.includes(f)).length;
+  const hasEnoughData = hasEmployment && ocrCount >= 4;
+
+  return { missing, filled, hasEnoughData };
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { profile, conversationHistory } = await req.json();
+    const { profile, conversationHistory, questionsAsked = 0 } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
 
-    const systemPrompt = `You are an intelligent eligibility assistant for FindMyScheme, a government welfare scheme discovery platform for Indian citizens.
+    const { missing, filled, hasEnoughData } = analyzeMissingFields(profile || {});
 
-Your goal: Ask the MINIMUM number of targeted questions to gather eligibility information based on the user's profile. You must respond with a JSON tool call.
+    // EARLY STOP: If we already have enough data OR hit the absolute max (4 questions)
+    if (hasEnoughData || questionsAsked >= 4 || missing.length === 0) {
+      return new Response(JSON.stringify({
+        question: "",
+        key: "",
+        suggestions: [],
+        complete: true,
+        greeting: questionsAsked === 0
+          ? "Your documents provided all the information I need!"
+          : "That's all I need to know!",
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-USER PROFILE (already known):
+    const systemPrompt = `You are an ultra-efficient eligibility assistant for FindMyScheme, a government welfare scheme discovery platform for Indian citizens.
+
+## YOUR MISSION
+Ask the ABSOLUTE MINIMUM number of questions to determine scheme eligibility. Every question must have maximum information value.
+
+## USER PROFILE (already known from documents):
 ${JSON.stringify(profile, null, 2)}
 
-RULES:
-1. Analyze what's already known and what's missing for scheme eligibility.
-2. Generate ONE question at a time — the most impactful one based on what you know.
-3. Each question MUST have a "key" that maps to a profile field, a clear "question" text, and 3-7 "suggestions" (quick-reply chips).
-4. Consider the user's age, state, gender, income when choosing what to ask.
-5. Use conditional logic:
-   - If age 18-25: prioritize education/student status, scholarship eligibility
-   - If occupation is farming: ask about land ownership, crop type
-   - If female: ask about maternity-related eligibility
-   - If income < 250000: focus on BPL/welfare schemes
-   - If student: ask for institution type, enrollment status
-6. Category verification questions:
-   - Students: institution type, education level, enrollment status
-   - Farmers: land ownership, agriculture type, farm size
-   - Business owners: business type, registration status, MSME
-7. When you have enough information (all critical fields filled), set "complete" to true.
-8. NEVER ask about Aadhaar numbers, PAN numbers, or any document numbers.
-9. Keep questions conversational and simple.
+## FIELDS ALREADY FILLED: ${filled.join(", ") || "none"}
+## FIELDS STILL MISSING: ${missing.join(", ") || "none"}
+## QUESTIONS ASKED SO FAR: ${questionsAsked}
+## QUESTIONS REMAINING BUDGET: ${Math.max(0, 4 - questionsAsked)}
 
-PROFILE FIELDS TO GATHER (if missing):
-- employmentStatus: current work status
-- occupationType: type of occupation/work
-- educationLevel: highest education
-- maritalStatus: marital status
-- hasDisability: disability status (boolean)
-- landOwnership: agricultural land ownership
-- hasBankAccount: bank account linked with Aadhaar (boolean)
-- income: annual family income (number)
-- residency: rural/urban/semi-urban
-- category: APL/BPL/AAY (if not set)
-- Additional category-specific: institutionType, enrollmentStatus, agricultureType, businessType, startupStatus`;
+## CRITICAL RULES — FOLLOW STRICTLY
 
-    const messages = [
+### 1. ABSOLUTE QUESTION LIMIT
+- Ideal: 1-2 questions total
+- Maximum: 3 questions  
+- Hard cap: 4 questions (system will force-stop after this)
+- If you can determine eligibility NOW, set complete=true IMMEDIATELY
+
+### 2. NEVER RE-ASK KNOWN INFORMATION
+- If a field exists in the profile (even partially), do NOT ask about it
+- Name, DOB, age, gender, address, state, income from documents = NEVER ask again
+- If income is known, do NOT ask about income category — derive it
+
+### 3. HIGH-IMPACT CLASSIFICATION QUESTIONS
+Instead of asking narrow questions, ask ONE broad classification question that reveals multiple attributes at once.
+
+GOOD (one question reveals occupation, student status, employment):
+"What best describes your current situation?"
+→ Student / Farmer / Salaried Employee / Business Owner / Self-Employed / Unemployed / Retired
+
+BAD (narrow, wastes question budget):
+"Are you employed?"
+"What is your occupation?"
+"Are you a student?"
+
+### 4. DERIVE INSTEAD OF ASK
+- Age < 25 + Student → likely unmarried, no land, education schemes
+- Farmer → likely rural, agriculture-related schemes  
+- Income < ₹1 lakh → likely BPL
+- Income < ₹2.5 lakh → likely APL with welfare eligibility
+- Female + age 18-45 → women empowerment schemes
+- DO NOT ask questions whose answers can be logically derived
+
+### 5. EARLY COMPLETION
+Set complete=true as soon as you have:
+- Employment/occupation status (the single most impactful field)
+- Plus any 2 additional eligibility attributes
+- OR if the profile already has 5+ filled fields
+
+### 6. QUESTION PRIORITY ORDER
+If you must ask, prioritize in this order:
+1. Employment/occupation status (HIGHEST impact — unlocks category-specific schemes)
+2. Education level (only if age suggests student/young adult)
+3. Residence type (rural/urban — only if not derivable from address)
+4. Everything else can be skipped or derived
+
+### 7. CONTEXTUAL INTELLIGENCE
+Based on what you already know:
+${profile?.gender === "female" ? "- User is female: consider women-specific schemes" : ""}
+${(profile?.income && profile.income < 250000) ? "- Low income: focus on welfare/subsidy schemes" : ""}
+${(profile?.dob || profile?.ageRange) ? "- Age is known: use it to skip age-related questions" : ""}
+${profile?.state ? `- State is ${profile.state}: consider state-specific schemes` : ""}
+
+## OUTPUT FORMAT
+You MUST respond with the ask_question tool call. Include:
+- question: Clear, conversational question text
+- key: The profile field this fills (e.g., "employmentStatus")
+- suggestions: 4-7 quick-reply chips (most common options first)
+- complete: true if no more questions needed, false if asking a question
+- greeting: Optional brief context (e.g., "Great, just one more thing!")
+
+Keep suggestions SHORT (1-3 words each). Make the question feel effortless.`;
+
+    const messages: { role: string; content: string }[] = [
       { role: "system", content: systemPrompt },
       ...(conversationHistory || []),
     ];
 
-    // If no conversation history, add initial user message
     if (!conversationHistory || conversationHistory.length === 0) {
-      messages.push({ role: "user", content: "Please start asking me questions to determine my eligibility for government schemes." });
+      messages.push({
+        role: "user",
+        content: "I've uploaded my documents. Ask me only the most essential questions to find my eligible schemes.",
+      });
     }
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -76,24 +182,24 @@ PROFILE FIELDS TO GATHER (if missing):
             type: "function",
             function: {
               name: "ask_question",
-              description: "Ask the user a question to gather eligibility information",
+              description: "Ask the user a single high-impact eligibility question, or mark complete if enough data exists",
               parameters: {
                 type: "object",
                 properties: {
-                  question: { type: "string", description: "The question to ask" },
-                  key: { type: "string", description: "Profile field this question fills" },
+                  question: { type: "string", description: "The question to ask (empty string if complete)" },
+                  key: { type: "string", description: "Profile field this fills (empty string if complete)" },
                   suggestions: {
                     type: "array",
                     items: { type: "string" },
-                    description: "Quick-reply suggestion chips (3-7 options)",
+                    description: "Quick-reply chips (4-7 options, short labels)",
                   },
                   complete: {
                     type: "boolean",
-                    description: "True if enough information has been gathered",
+                    description: "Set true when enough data is gathered or no critical fields missing",
                   },
                   greeting: {
                     type: "string",
-                    description: "Optional greeting or context message before the question",
+                    description: "Optional brief context message before the question",
                   },
                 },
                 required: ["question", "key", "suggestions", "complete"],
@@ -103,6 +209,7 @@ PROFILE FIELDS TO GATHER (if missing):
           },
         ],
         tool_choice: { type: "function", function: { name: "ask_question" } },
+        temperature: 0.3,
       }),
     });
 
@@ -127,17 +234,26 @@ PROFILE FIELDS TO GATHER (if missing):
 
     if (toolCall?.function?.arguments) {
       const parsed = JSON.parse(toolCall.function.arguments);
+
+      // Server-side enforcement: if this is question 3+, hint to AI it should wrap up
+      if (questionsAsked >= 2 && !parsed.complete) {
+        parsed.greeting = parsed.greeting
+          ? `${parsed.greeting} (Last question!)`
+          : "Almost done — just one final question!";
+      }
+
       return new Response(JSON.stringify(parsed), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fallback if no tool call
+    // Fallback: ask the single most impactful question
     return new Response(JSON.stringify({
-      question: "What is your current employment status?",
+      question: "What best describes your current situation?",
       key: "employmentStatus",
-      suggestions: ["Employed", "Self-Employed", "Farmer", "Student", "Unemployed", "Retired"],
+      suggestions: ["Student", "Farmer", "Salaried", "Business Owner", "Self-Employed", "Unemployed", "Retired"],
       complete: false,
+      greeting: "Just one quick question to find your best schemes!",
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

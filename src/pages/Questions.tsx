@@ -3,13 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { Shield, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
+import { Bot, User, Send, Loader2, Sparkles, Zap } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ChatMessage } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageTransition } from "@/components/PageTransition";
+
+const MAX_QUESTIONS = 4;
 
 const incomeMap: Record<string, number> = {
   "Below ₹1 lakh": 80000,
@@ -39,75 +40,102 @@ const Questions = () => {
   const chatRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
-  const estimatedTotal = 6;
-  const progress = Math.min((questionsAsked / estimatedTotal) * 100, 95);
+  const progress = Math.min((questionsAsked / 3) * 100, 100);
 
-  const fetchNextQuestion = useCallback(async (history: { role: string; content: string }[], currentProfile: any) => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("smart-questions", {
-        body: { profile: currentProfile, conversationHistory: history },
-      });
-      if (error) throw error;
-      if (data.error) { toast.error(data.error); setLoading(false); return; }
+  const completeAndNavigate = useCallback((greeting?: string) => {
+    syncProfileToServer();
+    const newMessages: ChatMessage[] = [];
+    if (greeting) {
+      newMessages.push({ id: "g-done", role: "assistant", content: greeting });
+    }
+    newMessages.push({
+      id: "done",
+      role: "assistant",
+      content: "I have everything I need! Let me find the best government schemes for you 🎉",
+    });
+    setMessages(prev => [...prev, ...newMessages]);
+    setLoading(false);
+    setTimeout(() => {
+      navigate("/schemes");
+      toast.success("Profile complete! Showing your matched schemes.");
+    }, 1200);
+  }, [syncProfileToServer, navigate]);
 
-      const q = data as AIQuestion;
-      if (q.complete) {
-        syncProfileToServer();
-        setMessages(prev => [
-          ...prev,
-          ...(q.greeting ? [{ id: `g-done`, role: "assistant" as const, content: q.greeting }] : []),
-          { id: "done", role: "assistant" as const, content: "I have enough information now. Let me find the best government schemes for you! 🎉" },
-        ]);
-        setLoading(false);
-        setTimeout(() => { navigate("/schemes"); toast.success("Profile complete! Showing your matched schemes."); }, 1500);
+  const fetchNextQuestion = useCallback(
+    async (history: { role: string; content: string }[], currentProfile: any, asked: number) => {
+      // Client-side hard cap enforcement
+      if (asked >= MAX_QUESTIONS) {
+        completeAndNavigate("That's all the questions I needed!");
         return;
       }
 
-      setCurrentQuestion(q);
-      const newMessages: ChatMessage[] = [];
-      if (q.greeting) newMessages.push({ id: `g-${questionsAsked}`, role: "assistant", content: q.greeting });
-      newMessages.push({ id: `q-${questionsAsked}`, role: "assistant", content: q.question, suggestions: q.suggestions });
-      setMessages(prev => [...prev, ...newMessages]);
-    } catch (err) {
-      console.error("Failed to fetch AI question:", err);
-      toast.error("Failed to generate question. Using fallback.");
-      fallbackQuestion();
-    }
-    setLoading(false);
-  }, [questionsAsked, syncProfileToServer, navigate]);
+      setLoading(true);
+      try {
+        const { data, error } = await supabase.functions.invoke("smart-questions", {
+          body: { profile: currentProfile, conversationHistory: history, questionsAsked: asked },
+        });
+        if (error) throw error;
+        if (data.error) { toast.error(data.error); setLoading(false); return; }
 
-  const fallbackQuestions: AIQuestion[] = [
-    { question: "What is your current employment status?", key: "employmentStatus", suggestions: ["Employed (Salaried)", "Self-Employed", "Farmer", "Student", "Unemployed", "Retired"], complete: false },
-    { question: "What is your highest level of education?", key: "educationLevel", suggestions: ["Below 10th", "10th Pass", "12th Pass", "Graduate", "Post Graduate"], complete: false },
-    { question: "Do you own any agricultural land?", key: "landOwnership", suggestions: ["No land", "Below 1 acre", "1-5 acres", "Above 5 acres"], complete: false },
-    { question: "Do you have a bank account linked with Aadhaar?", key: "hasBankAccount", suggestions: ["Yes", "No", "Not sure"], complete: false },
-  ];
-  const fallbackIndex = useRef(0);
+        const q = data as AIQuestion;
+        if (q.complete) {
+          completeAndNavigate(q.greeting);
+          return;
+        }
 
-  const fallbackQuestion = () => {
-    const q = fallbackQuestions[fallbackIndex.current % fallbackQuestions.length];
-    fallbackIndex.current++;
-    if ((profile as any)[q.key]) {
-      if (fallbackIndex.current < fallbackQuestions.length) { fallbackQuestion(); return; }
-      syncProfileToServer();
-      setMessages(prev => [...prev, { id: "done", role: "assistant", content: "Profile complete! Let me find schemes for you! 🎉" }]);
-      setTimeout(() => navigate("/schemes"), 1500);
+        setCurrentQuestion(q);
+        const newMessages: ChatMessage[] = [];
+        if (q.greeting) newMessages.push({ id: `g-${asked}`, role: "assistant", content: q.greeting });
+        newMessages.push({ id: `q-${asked}`, role: "assistant", content: q.question, suggestions: q.suggestions });
+        setMessages(prev => [...prev, ...newMessages]);
+      } catch (err) {
+        console.error("Failed to fetch AI question:", err);
+        toast.error("Failed to generate question. Using fallback.");
+        fallbackQuestion(asked);
+      }
+      setLoading(false);
+    },
+    [completeAndNavigate]
+  );
+
+  // Minimal fallback — single high-impact question
+  const fallbackQuestion = (asked: number) => {
+    if (asked >= MAX_QUESTIONS || profile.employmentStatus) {
+      completeAndNavigate();
       return;
     }
+    const q: AIQuestion = {
+      question: "What best describes your current situation?",
+      key: "employmentStatus",
+      suggestions: ["Student", "Farmer", "Salaried", "Business Owner", "Self-Employed", "Unemployed", "Retired"],
+      complete: false,
+      greeting: "Just one quick question!",
+    };
     setCurrentQuestion(q);
-    setMessages(prev => [...prev, { id: `q-${questionsAsked}`, role: "assistant", content: q.question, suggestions: q.suggestions }]);
+    setMessages(prev => [
+      ...prev,
+      { id: `g-${asked}`, role: "assistant", content: q.greeting! },
+      { id: `q-${asked}`, role: "assistant", content: q.question, suggestions: q.suggestions },
+    ]);
   };
 
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-    setMessages([{
-      id: "welcome",
-      role: "assistant",
-      content: `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask you a few smart questions to find the best government schemes for you. Your answers help me personalize recommendations.`,
-    }]);
-    fetchNextQuestion([], profile);
+
+    // Count how many fields are already filled from OCR
+    const filledFields = ["name", "dob", "gender", "address", "state", "income", "employmentStatus"]
+      .filter(k => {
+        const v = (profile as any)[k];
+        return v !== null && v !== undefined && v !== "";
+      });
+
+    const welcomeMsg = filledFields.length >= 5
+      ? `Great news${profile.name ? `, ${profile.name}` : ""}! Your documents filled most of your profile. I just need to confirm a couple of things.`
+      : `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask just 1–2 quick questions to match you with the right schemes.`;
+
+    setMessages([{ id: "welcome", role: "assistant", content: welcomeMsg }]);
+    fetchNextQuestion([], profile, 0);
   }, []);
 
   useEffect(() => {
@@ -132,27 +160,34 @@ const Questions = () => {
       { role: "user", content: answer },
     ];
     setConversationHistory(newHistory);
-    setQuestionsAsked(prev => prev + 1);
+    const newCount = questionsAsked + 1;
+    setQuestionsAsked(newCount);
     setCurrentQuestion(null);
     setInput("");
-    await fetchNextQuestion(newHistory, updatedProfile);
+    await fetchNextQuestion(newHistory, updatedProfile, newCount);
   };
 
   return (
     <PageTransition>
       <div className="flex min-h-screen flex-col bg-background">
+        {/* Header */}
         <header className="sticky top-0 z-50 glass-nav">
           <div className="container flex h-16 items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
               <Sparkles className="h-[18px] w-[18px] text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <span className="text-sm font-bold">Smart Questions</span>
-              <p className="text-xs text-muted-foreground">Step 3 of 3</p>
+              <span className="text-sm font-bold">Quick Questions</span>
+              <p className="text-xs text-muted-foreground">Step 3 of 3 • Just 1–3 questions</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-xs font-medium text-muted-foreground">{questionsAsked} answered</span>
-              <div className="w-20 overflow-hidden rounded-full bg-muted">
+              <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
+                <Zap className="h-3.5 w-3.5 text-primary" />
+                <span className="text-xs font-semibold text-primary">
+                  {questionsAsked === 0 ? "Starting" : `${questionsAsked} of ~3`}
+                </span>
+              </div>
+              <div className="w-16 overflow-hidden rounded-full bg-muted">
                 <motion.div
                   className="h-1.5 rounded-full gradient-primary"
                   animate={{ width: `${progress}%` }}
@@ -172,21 +207,25 @@ const Questions = () => {
                   key={msg.id}
                   initial={{ opacity: 0, y: 12, scale: 0.97 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  transition={{ duration: 0.3 }}
+                  transition={{ duration: 0.25 }}
                   className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
                 >
-                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                    msg.role === "assistant" 
-                      ? "gradient-primary text-primary-foreground shadow-sm" 
-                      : "bg-muted border border-border"
-                  }`}>
+                  <div
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                      msg.role === "assistant"
+                        ? "gradient-primary text-primary-foreground shadow-sm"
+                        : "bg-muted border border-border"
+                    }`}
+                  >
                     {msg.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
                   </div>
-                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
-                    msg.role === "assistant" 
-                      ? "bg-card border shadow-soft" 
-                      : "gradient-primary text-primary-foreground shadow-sm"
-                  }`}>
+                  <div
+                    className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                      msg.role === "assistant"
+                        ? "bg-card border shadow-soft"
+                        : "gradient-primary text-primary-foreground shadow-sm"
+                    }`}
+                  >
                     {msg.content}
                   </div>
                 </motion.div>
@@ -237,7 +276,10 @@ const Questions = () => {
             )}
             <form
               className="flex gap-2"
-              onSubmit={e => { e.preventDefault(); if (input.trim()) handleAnswer(input.trim()); }}
+              onSubmit={e => {
+                e.preventDefault();
+                if (input.trim()) handleAnswer(input.trim());
+              }}
             >
               <Input
                 value={input}
@@ -246,7 +288,12 @@ const Questions = () => {
                 className="h-11 flex-1 rounded-xl"
                 disabled={loading || !currentQuestion}
               />
-              <Button type="submit" size="icon" className="h-11 w-11 rounded-xl shadow-sm" disabled={!input.trim() || loading || !currentQuestion}>
+              <Button
+                type="submit"
+                size="icon"
+                className="h-11 w-11 rounded-xl shadow-sm"
+                disabled={!input.trim() || loading || !currentQuestion}
+              >
                 <Send className="h-4 w-4" />
               </Button>
             </form>

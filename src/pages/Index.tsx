@@ -1,7 +1,8 @@
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, Search, Shield, Smartphone, Zap, ChevronRight, ArrowRight, CheckCircle2, Lock, Users } from "lucide-react";
+import { FileText, MessageSquare, Search, Smartphone, Zap, ChevronRight, ArrowRight, CheckCircle2, Lock, Users } from "lucide-react";
+import logo from "@/assets/FindMyScheme_logo.png";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 
 const Index = () => {

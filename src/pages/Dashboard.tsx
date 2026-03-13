@@ -36,6 +36,7 @@ const Dashboard = () => {
 
   const eligible = allMatched.filter(s => s.matchScore >= 70);
   const nearlyEligible = allMatched.filter(s => s.matchScore >= 40 && s.matchScore < 70);
+  const futureOpportunities = allMatched.filter(s => s.matchScore > 0 && s.matchScore < 40);
   const saved = useMemo(() => sampleSchemes.filter(s => savedSchemes.includes(s.id)), [savedSchemes]);
 
   // Simulate new schemes for returning users (schemes launched after last visit)

@@ -39,7 +39,7 @@ const UploadPage = () => {
   const handleFileSelect = async (type: string, file: File) => {
     setDocuments(prev => ({
       ...prev,
-      [type]: { file, status: "processing", progress: 0, fields: {} },
+      [type]: { file, status: "processing", progress: 0, fields: {}, avgConfidence: 0 },
     }));
 
     try {

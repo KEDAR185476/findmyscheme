@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { MatchedScheme } from "@/types";
 import { SCHEME_CATEGORIES } from "@/data/schemes";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 interface BenefitScheme {
   id: string;
@@ -89,10 +90,12 @@ function DonutChart({
   segments,
   size = 180,
   strokeWidth = 24,
+  centerLabel = "Total Benefits",
 }: {
   segments: { label: string; value: number; color: string }[];
   size?: number;
   strokeWidth?: number;
+  centerLabel?: string;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -155,7 +158,7 @@ function DonutChart({
         className="fill-muted-foreground"
         style={{ fontSize: "11px" }}
       >
-        Total Benefits
+        {centerLabel}
       </text>
     </svg>
   );
@@ -165,9 +168,13 @@ function DonutChart({
 function OpportunityBar({
   claimed,
   unclaimed,
+  appliedLabel = "Applied",
+  notAppliedLabel = "Not Yet Applied",
 }: {
   claimed: number;
   unclaimed: number;
+  appliedLabel?: string;
+  notAppliedLabel?: string;
 }) {
   const total = claimed + unclaimed;
   const claimedPct = total > 0 ? (claimed / total) * 100 : 0;
@@ -176,8 +183,8 @@ function OpportunityBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Applied</span>
-        <span className="text-muted-foreground">Not Yet Applied</span>
+        <span className="text-muted-foreground">{appliedLabel}</span>
+        <span className="text-muted-foreground">{notAppliedLabel}</span>
       </div>
       <div className="relative h-4 overflow-hidden rounded-full bg-muted">
         <motion.div
@@ -203,6 +210,7 @@ function OpportunityBar({
 
 export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsInsightsProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Parse benefit amounts from scheme data
   const benefitSchemes: BenefitScheme[] = eligibleSchemes
@@ -257,7 +265,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
           <TrendingUp className="h-4 w-4 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold">Benefits Insights</h2>
+        <h2 className="text-lg font-semibold">{t("benefits_insights")}</h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
@@ -267,7 +275,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
             {/* Header */}
             <div className="mb-5 flex items-center gap-2">
               <IndianRupee className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Total Benefits Available</span>
+              <span className="text-sm font-semibold text-foreground">{t("total_benefits")}</span>
             </div>
 
             {/* Animated counter + donut */}
@@ -283,12 +291,12 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
                   ₹{animatedTotal.toLocaleString("en-IN")}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Across {benefitSchemes.length} eligible scheme{benefitSchemes.length !== 1 ? "s" : ""}
+                  {t("across_schemes", { count: benefitSchemes.length })}
                 </p>
               </motion.div>
 
               {/* Donut chart */}
-              <DonutChart segments={donutSegments} size={160} strokeWidth={20} />
+              <DonutChart segments={donutSegments} size={160} strokeWidth={20} centerLabel={t("total_benefits")} />
 
               {/* Legend */}
               <div className="w-full space-y-1.5 mt-2">
@@ -326,11 +334,11 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
             {/* Header */}
             <div className="mb-5 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-accent" />
-              <span className="text-sm font-semibold text-foreground">Unused Benefits</span>
+              <span className="text-sm font-semibold text-foreground">{t("unused_benefits")}</span>
             </div>
 
             {/* Opportunity bar */}
-            <OpportunityBar claimed={claimedAmount} unclaimed={unclaimedAmount} />
+            <OpportunityBar claimed={claimedAmount} unclaimed={unclaimedAmount} appliedLabel={t("applied")} notAppliedLabel={t("not_applied")} />
 
             {/* Insight text */}
             <motion.div
@@ -342,11 +350,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
               <div className="flex items-start gap-2">
                 <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
                 <p className="text-xs leading-relaxed text-accent-foreground/80">
-                  You're eligible for{" "}
-                  <strong className="text-foreground">{unclaimedSchemes.length} scheme{unclaimedSchemes.length !== 1 ? "s" : ""}</strong>{" "}
-                  worth{" "}
-                  <strong className="text-foreground">{formatINR(unclaimedAmount)}</strong>{" "}
-                  that you haven't applied for yet.
+                  {t("eligible_not_applied", { count: unclaimedSchemes.length, amount: formatINR(unclaimedAmount) })}
                 </p>
               </div>
             </motion.div>
@@ -392,7 +396,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
               className="mt-4 w-full rounded-xl border-primary/20 text-primary hover:bg-primary/5"
               onClick={() => navigate("/schemes")}
             >
-              View All Schemes <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              {t("view_all_schemes")} <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </CardContent>
         </Card>

@@ -201,6 +201,7 @@
   "not_applied": "Not Yet Applied",
   "eligible_not_applied": "You're eligible for {{count}} scheme(s) worth {{amount}} that you haven't applied for yet.",
   "view_all_schemes": "View All Schemes",
+  "across_schemes": "Across {{count}} eligible schemes",
 
   "explain_title": "Explain Eligibility",
   "your_profile": "Your Profile",

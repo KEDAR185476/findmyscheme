@@ -201,6 +201,7 @@
   "not_applied": "अभी तक आवेदन नहीं",
   "eligible_not_applied": "आप {{count}} योजना(ओं) के पात्र हैं, मूल्य {{amount}}, जिनके लिए अभी तक आवेदन नहीं किया है।",
   "view_all_schemes": "सभी योजनाएँ देखें",
+  "across_schemes": "{{count}} पात्र योजनाओं में",
 
   "explain_title": "पात्रता समझाइए",
   "your_profile": "आपकी प्रोफ़ाइल",

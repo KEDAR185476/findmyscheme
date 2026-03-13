@@ -34,6 +34,8 @@ const App = () => (
             <Route path="/schemes" element={<Schemes />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/explain" element={<ExplainEligibility />} />
+            <Route path="/simulator" element={<Simulator />} />
+            <Route path="/timeline" element={<Timeline />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

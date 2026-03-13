@@ -22,7 +22,8 @@ interface AuthContextType {
 
 const defaultProfile: UserProfile = {
   name: "", dob: "", gender: "", phone: "", address: "", state: "", district: "",
-  income: null, category: "", casteCategory: "", panNumber: "", aadhaarNumber: "",
+  income: null, category: "", casteCategory: "",
+  ageRange: "", incomeRange: "", occupationType: "", residency: "rural",
   employmentStatus: "", educationLevel: "", maritalStatus: "", hasDisability: false,
   landOwnership: "", hasBankAccount: false,
 };

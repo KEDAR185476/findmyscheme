@@ -265,7 +265,7 @@ function EligibilityGraph({
 // ─── Mini Chatbot ──────────────────────────────────────
 function GapChatbot({ scheme, profile, gaps, t }: {
   scheme: MatchedScheme | null; profile: any; gaps: EligibilityCondition[];
-  t: (key: string) => string;
+  t: (key: string, opts?: any) => string;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");

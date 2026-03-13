@@ -20,6 +20,13 @@ const generateQuestions = (profile: any): { question: string; key: string; sugge
       suggestions: ["Employed (Salaried)", "Self-Employed", "Farmer", "Daily Wage Worker", "Unemployed", "Student", "Retired"],
     });
   }
+  if (!profile.occupationType) {
+    qs.push({
+      question: "What type of occupation are you in?",
+      key: "occupationType",
+      suggestions: ["Agriculture", "Government Service", "Private Sector", "Business/Trade", "Skilled Labour", "Unskilled Labour", "Homemaker", "Not Applicable"],
+    });
+  }
   if (!profile.educationLevel) {
     qs.push({
       question: "What is your highest level of education?",

@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Shield, FileText, CreditCard, FileCheck, ArrowRight, SkipForward, Loader2, Lock } from "lucide-react";
+import { Shield, FileText, CreditCard, FileCheck, ArrowRight, SkipForward, Loader2, Lock, CheckCircle2 } from "lucide-react";
 import { DocumentUpload } from "@/types";
 import { extractTextFromImage, parseExtractedText } from "@/lib/ocr";
 import { pdfToImage } from "@/lib/pdf-to-image";
 import { DocumentUploadCard } from "@/components/DocumentUploadCard";
 import { toast } from "sonner";
+import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
+import { AppHeader } from "@/components/AppHeader";
 
 const DOC_TYPES: { type: DocumentUpload["type"]; label: string; icon: typeof FileText; required: boolean }[] = [
   { type: "aadhaar", label: "Aadhaar Card", icon: Shield, required: true },
@@ -41,13 +43,8 @@ const UploadPage = () => {
 
     try {
       let imageInput: File | Blob = file;
-
-      // Convert PDF to image first
       if (file.type === "application/pdf") {
-        setDocuments(prev => ({
-          ...prev,
-          [type]: { ...prev[type], progress: 5 },
-        }));
+        setDocuments(prev => ({ ...prev, [type]: { ...prev[type], progress: 5 } }));
         const { blob } = await pdfToImage(file);
         imageInput = blob;
       }
@@ -64,91 +61,79 @@ const UploadPage = () => {
 
       const fields = parseExtractedText(rawText, type);
       const fieldCount = Object.keys(fields).length;
-
-      setDocuments(prev => ({
-        ...prev,
-        [type]: { file, status: "done", progress: 100, fields },
-      }));
-
-      toast.success(
-        `${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted`
-      );
+      setDocuments(prev => ({ ...prev, [type]: { file, status: "done", progress: 100, fields } }));
+      toast.success(`${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted`);
     } catch (err) {
       console.error("OCR error:", err);
-      setDocuments(prev => ({
-        ...prev,
-        [type]: { file, status: "error", progress: 0, fields: {} },
-      }));
+      setDocuments(prev => ({ ...prev, [type]: { file, status: "error", progress: 0, fields: {} } }));
       toast.error(`Failed to process ${DOC_TYPES.find(d => d.type === type)?.label}`);
     }
   };
 
   const handleContinue = () => {
-    if (uploadedCount === 0) {
-      toast.error("Please upload at least one document");
-      return;
-    }
-
+    if (uploadedCount === 0) { toast.error("Please upload at least one document"); return; }
     const allFields: Record<string, { value: string; confidence: number }> = {};
     for (const [, doc] of Object.entries(documents)) {
       if (doc.status === "done") {
         for (const [key, val] of Object.entries(doc.fields)) {
-          if (!allFields[key] || val.confidence > allFields[key].confidence) {
-            allFields[key] = val;
-          }
+          if (!allFields[key] || val.confidence > allFields[key].confidence) allFields[key] = val;
         }
       }
     }
-
     localStorage.setItem("fms_ocr_fields", JSON.stringify(allFields));
-    const uploadedTypes = Object.entries(documents)
-      .filter(([, v]) => v.status === "done")
-      .map(([k]) => k);
+    const uploadedTypes = Object.entries(documents).filter(([, v]) => v.status === "done").map(([k]) => k);
     localStorage.setItem("fms_uploaded_docs", JSON.stringify(uploadedTypes));
     navigate("/verify");
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
-            <span className="font-bold">FindMyScheme</span>
-          </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">{uploadedCount}/{DOC_TYPES.length} processed</span>
+    <PageTransition>
+      <AppHeader>
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5">
+            <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+            <span className="text-xs font-medium text-muted-foreground">{uploadedCount}/{DOC_TYPES.length}</span>
           </div>
         </div>
-      </header>
+      </AppHeader>
 
-      <div className="container max-w-2xl py-8">
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <h1 className="mb-2 text-2xl font-bold">Upload Your Documents</h1>
-          <p className="mb-4 text-muted-foreground">
-            Upload your identity documents as images (JPG, PNG) or PDFs. All processing happens securely in your browser.
-          </p>
-
-          {/* Security badge */}
-          <div className="mb-6 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
-            <Lock className="h-4 w-4 text-primary" />
-            <p className="text-xs text-primary">
-              <strong>End-to-end secure:</strong> Documents are processed locally using on-device OCR. No files leave your browser.
+      <div className="container max-w-2xl py-8 md:py-12">
+        <StaggerContainer>
+          <StaggerItem>
+            <div className="mb-2">
+              <p className="text-sm font-semibold uppercase tracking-wider text-primary">Step 1 of 3</p>
+            </div>
+            <h1 className="mb-3 text-2xl font-bold tracking-tight md:text-3xl">Upload Your Documents</h1>
+            <p className="mb-5 text-muted-foreground leading-relaxed">
+              Upload your identity documents as images (JPG, PNG) or PDFs. All processing happens securely in your browser.
             </p>
-          </div>
+          </StaggerItem>
 
-          <Progress value={progress} className="mb-8 h-2" />
+          <StaggerItem>
+            <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/5 px-5 py-3">
+              <Lock className="h-5 w-5 text-primary shrink-0" />
+              <p className="text-sm text-primary/90">
+                <strong>End-to-end secure:</strong> Documents are processed locally using on-device OCR. No files leave your browser.
+              </p>
+            </div>
+          </StaggerItem>
 
-          <div className="space-y-4">
+          <StaggerItem>
+            <div className="mb-8 overflow-hidden rounded-full bg-muted">
+              <motion.div
+                className="h-2 rounded-full gradient-primary"
+                initial={{ width: 0 }}
+                animate={{ width: `${progress}%` }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              />
+            </div>
+          </StaggerItem>
+
+          <div className="space-y-3">
             {DOC_TYPES.map((doc, i) => {
               const state = documents[doc.type];
               return (
-                <motion.div
-                  key={doc.type}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.08 }}
-                >
+                <StaggerItem key={doc.type}>
                   <DocumentUploadCard
                     type={doc.type}
                     label={doc.label}
@@ -161,26 +146,28 @@ const UploadPage = () => {
                     disabled={processingCount > 0 && state?.status !== "processing"}
                     onFileSelect={(file) => handleFileSelect(doc.type, file)}
                   />
-                </motion.div>
+                </StaggerItem>
               );
             })}
           </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
-            <Button variant="ghost" onClick={() => { navigate("/verify"); toast.info("Skipped document upload"); }}>
-              <SkipForward className="mr-2 h-4 w-4" /> Skip for Now
-            </Button>
-            <Button onClick={handleContinue} disabled={uploadedCount === 0 || processingCount > 0}>
-              {processingCount > 0 ? (
-                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
-              ) : (
-                <>Continue to Verification <ArrowRight className="ml-2 h-4 w-4" /></>
-              )}
-            </Button>
-          </div>
-        </motion.div>
+          <StaggerItem>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-between">
+              <Button variant="ghost" className="text-muted-foreground" onClick={() => { navigate("/verify"); toast.info("Skipped document upload"); }}>
+                <SkipForward className="mr-2 h-4 w-4" /> Skip for Now
+              </Button>
+              <Button onClick={handleContinue} disabled={uploadedCount === 0 || processingCount > 0} className="h-11 rounded-lg px-6 shadow-sm">
+                {processingCount > 0 ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>
+                ) : (
+                  <>Continue to Verification <ArrowRight className="ml-2 h-4 w-4" /></>
+                )}
+              </Button>
+            </div>
+          </StaggerItem>
+        </StaggerContainer>
       </div>
-    </div>
+    </PageTransition>
   );
 };
 

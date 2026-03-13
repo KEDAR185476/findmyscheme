@@ -65,10 +65,14 @@ const Verify = () => {
       }
     }
 
+    // Remove sensitive document data — only derived attributes shown
+    delete parsed.aadhaarNumber;
+    delete parsed.panNumber;
+
     // Ensure all required display fields exist
     for (const key of REQUIRED_DISPLAY_FIELDS) {
       if (!parsed[key]) {
-        parsed[key] = { value: "", confidence: 0 };
+        parsed[key] = { value: key === "residency" ? "rural" : "", confidence: 0 };
       }
     }
 

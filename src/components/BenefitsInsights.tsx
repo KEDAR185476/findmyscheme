@@ -179,8 +179,8 @@ function OpportunityBar({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between text-xs">
-        <span className="text-muted-foreground">Applied</span>
-        <span className="text-muted-foreground">Not Yet Applied</span>
+        <span className="text-muted-foreground">{appliedLabel}</span>
+        <span className="text-muted-foreground">{notAppliedLabel}</span>
       </div>
       <div className="relative h-4 overflow-hidden rounded-full bg-muted">
         <motion.div

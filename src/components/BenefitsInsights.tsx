@@ -296,7 +296,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
               </motion.div>
 
               {/* Donut chart */}
-              <DonutChart segments={donutSegments} size={160} strokeWidth={20} />
+              <DonutChart segments={donutSegments} size={160} strokeWidth={20} centerLabel={t("total_benefits")} />
 
               {/* Legend */}
               <div className="w-full space-y-1.5 mt-2">

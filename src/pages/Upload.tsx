@@ -25,6 +25,7 @@ interface DocState {
   status: "idle" | "processing" | "done" | "error";
   progress: number;
   fields: Record<string, { value: string; confidence: number }>;
+  avgConfidence: number;
 }
 
 const UploadPage = () => {

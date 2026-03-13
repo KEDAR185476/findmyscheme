@@ -151,6 +151,7 @@ const UploadPage = () => {
                     status={state?.status || "idle"}
                     progress={state?.progress || 0}
                     fieldCount={state?.fields ? Object.keys(state.fields).length : 0}
+                    avgConfidence={state?.avgConfidence}
                     fileName={state?.file?.name}
                     disabled={processingCount > 0 && state?.status !== "processing"}
                     onFileSelect={(file) => handleFileSelect(doc.type, file)}

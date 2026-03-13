@@ -237,6 +237,15 @@ const Verify = () => {
                         <SelectItem value="ST">ST</SelectItem>
                       </SelectContent>
                     </Select>
+                  ) : key === "residency" ? (
+                    <Select value={value} onValueChange={v => updateField(key, v)}>
+                      <SelectTrigger><SelectValue placeholder="Select area type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rural">Rural</SelectItem>
+                        <SelectItem value="urban">Urban</SelectItem>
+                        <SelectItem value="semi-urban">Semi-Urban</SelectItem>
+                      </SelectContent>
+                    </Select>
                   ) : key === "age" ? (
                     <Input
                       id={key}

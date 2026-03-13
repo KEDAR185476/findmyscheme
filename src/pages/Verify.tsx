@@ -100,13 +100,62 @@ const Verify = () => {
     });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const updates: Record<string, any> = {};
     for (const [key, val] of Object.entries(fields)) {
       if (key === "age") continue;
       if (key === "income") updates[key] = val.value ? parseInt(val.value) : null;
       else updates[key] = val.value;
     }
+
+    // Run identity verification silently
+    setVerifying(true);
+    setVerificationAlerts([]);
+
+    try {
+      const ocrFieldsRaw = localStorage.getItem("fms_ocr_fields_backup");
+      let ocrFields: Record<string, { value: string; confidence: number }> = {};
+      try { ocrFields = ocrFieldsRaw ? JSON.parse(ocrFieldsRaw) : {}; } catch {}
+
+      const { data: verdict, error } = await supabase.functions.invoke("verify-identity", {
+        body: {
+          phone: auth.phone,
+          profile: { ...updates, age: fields.age?.value ? parseInt(fields.age.value) : null },
+          ocrFields,
+        },
+      });
+
+      if (!error && verdict) {
+        // Store verification metadata locally (non-sensitive)
+        localStorage.setItem("fms_verification", JSON.stringify({
+          safe: verdict.safe,
+          duplicateLevel: verdict.duplicate?.level,
+          fraudLevel: verdict.fraud?.level,
+          fraudScore: verdict.fraud?.score,
+        }));
+
+        if (verdict.alerts && verdict.alerts.length > 0) {
+          setVerificationAlerts(verdict.alerts);
+
+          // High risk: block progression
+          if (!verdict.safe) {
+            setVerifying(false);
+            toast.error("Identity verification flagged. Please review your details.");
+            return;
+          }
+
+          // Medium risk: warn but allow
+          verdict.alerts.forEach((a: string) => toast.warning(a, { duration: 6000 }));
+        }
+      }
+    } catch (err) {
+      console.error("Verification check failed (non-blocking):", err);
+      // Non-blocking: allow user to proceed even if verification service fails
+    }
+
+    setVerifying(false);
+    localStorage.removeItem("fms_ocr_fields_backup");
+
     setProfile(prev => ({ ...prev, ...updates }));
     syncProfileToServer();
     navigate("/questions");

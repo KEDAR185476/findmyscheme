@@ -74,7 +74,7 @@ const UploadPage = () => {
       }
     } catch (err) {
       console.error("OCR error:", err);
-      setDocuments(prev => ({ ...prev, [type]: { file, status: "error", progress: 0, fields: {} } }));
+      setDocuments(prev => ({ ...prev, [type]: { file, status: "error", progress: 0, fields: {}, avgConfidence: 0 } }));
       toast.error(`Failed to process ${DOC_TYPES.find(d => d.type === type)?.label}`);
     }
   };

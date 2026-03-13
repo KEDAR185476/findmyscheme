@@ -101,6 +101,8 @@ const Verify = () => {
       }
     }
     setProfile(prev => ({ ...prev, ...updates }));
+    // Sync to server
+    syncProfileToServer();
     navigate("/questions");
     toast.success("Profile verified! Let's refine your eligibility.");
   };

@@ -143,7 +143,7 @@ const Index = () => {
             </motion.div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[
-                { icon: Shield, title: "Secure & Private", desc: "Your documents are processed in-browser using on-device OCR. We never store raw files on any server." },
+                { icon: Zap, title: "Secure & Private", desc: "Your documents are processed in-browser using on-device OCR. We never store raw files on any server." },
                 { icon: Smartphone, title: "Works Everywhere", desc: "Responsive PWA that works seamlessly on any device — desktop, tablet, or mobile." },
                 { icon: Zap, title: "AI-Powered Matching", desc: "Smart algorithms match your profile against 500+ government schemes for accurate results." },
               ].map((feature, i) => (

@@ -55,25 +55,33 @@ const mapServerToClient = (sp: any): UserProfile => ({
 });
 
 // Map client profile to server format
-const mapClientToServer = (cp: UserProfile) => ({
-  name: cp.name || null,
-  dob: cp.dob || null,
-  gender: cp.gender || null,
-  address: cp.address || null,
-  state: cp.state || null,
-  district: cp.district || null,
-  income: cp.income,
-  category: cp.category || null,
-  caste_category: cp.casteCategory || null,
-  pan_number: cp.panNumber || null,
-  aadhaar_number: cp.aadhaarNumber || null,
-  employment_status: cp.employmentStatus || null,
-  education_level: cp.educationLevel || null,
-  marital_status: cp.maritalStatus || null,
-  has_disability: cp.hasDisability,
-  land_ownership: cp.landOwnership || null,
-  has_bank_account: cp.hasBankAccount,
-});
+const mapClientToServer = (cp: UserProfile) => {
+  // Compute derived ranges before sending
+  const ageRange = computeAgeRange(cp.dob);
+  const incomeRange = computeIncomeRange(cp.income);
+  return {
+    name: cp.name || null,
+    dob: cp.dob || null,
+    gender: cp.gender || null,
+    address: cp.address || null,
+    state: cp.state || null,
+    district: cp.district || null,
+    income: cp.income,
+    category: cp.category || null,
+    caste_category: cp.casteCategory || null,
+    // Derived eligibility attributes only — no aadhaar/pan
+    age_range: ageRange || cp.ageRange || null,
+    income_range: incomeRange || cp.incomeRange || null,
+    occupation_type: cp.occupationType || null,
+    residency: cp.residency || "rural",
+    employment_status: cp.employmentStatus || null,
+    education_level: cp.educationLevel || null,
+    marital_status: cp.maritalStatus || null,
+    has_disability: cp.hasDisability,
+    land_ownership: cp.landOwnership || null,
+    has_bank_account: cp.hasBankAccount,
+  };
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>(() => {

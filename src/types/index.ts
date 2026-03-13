@@ -9,14 +9,43 @@ export interface UserProfile {
   income: number | null;
   category: "APL" | "BPL" | "AAY" | "";
   casteCategory: "General" | "OBC" | "SC" | "ST" | "";
-  panNumber: string;
-  aadhaarNumber: string;
+  // Derived eligibility attributes (no raw document data stored)
+  ageRange: string;
+  incomeRange: string;
+  occupationType: string;
+  residency: string;
   employmentStatus: string;
   educationLevel: string;
   maritalStatus: string;
   hasDisability: boolean;
   landOwnership: string;
   hasBankAccount: boolean;
+}
+
+/** Compute age range bucket from DOB */
+export function computeAgeRange(dob: string): string {
+  if (!dob) return "";
+  const birth = new Date(dob);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const m = today.getMonth() - birth.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) age--;
+  if (age < 18) return "Below 18";
+  if (age <= 25) return "18-25";
+  if (age <= 35) return "26-35";
+  if (age <= 45) return "36-45";
+  if (age <= 60) return "46-60";
+  return "Above 60";
+}
+
+/** Compute income range bucket from annual income */
+export function computeIncomeRange(income: number | null): string {
+  if (income === null || income === undefined) return "";
+  if (income <= 100000) return "Below ₹1 lakh";
+  if (income <= 250000) return "₹1-2.5 lakh";
+  if (income <= 500000) return "₹2.5-5 lakh";
+  if (income <= 800000) return "₹5-8 lakh";
+  return "Above ₹8 lakh";
 }
 
 export interface DocumentUpload {

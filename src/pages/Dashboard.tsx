@@ -277,6 +277,7 @@ const Dashboard = () => {
                 ))}
               </div>
             </div>
+          )}
 
           {/* Profile Summary */}
           <Card className="mb-6">

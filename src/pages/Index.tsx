@@ -191,9 +191,7 @@ const Index = () => {
         <footer className="border-t py-10">
           <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary">
-                <Shield className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
+              <img src={logo} alt="FindMyScheme" className="h-7 w-7 object-contain" />
               <span className="font-semibold text-foreground">FindMyScheme</span>
             </div>
             <p>© 2026 FindMyScheme. Empowering citizens with information.</p>

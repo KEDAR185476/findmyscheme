@@ -396,7 +396,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
               className="mt-4 w-full rounded-xl border-primary/20 text-primary hover:bg-primary/5"
               onClick={() => navigate("/schemes")}
             >
-              View All Schemes <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              {t("view_all_schemes")} <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </CardContent>
         </Card>

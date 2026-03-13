@@ -168,9 +168,13 @@ function DonutChart({
 function OpportunityBar({
   claimed,
   unclaimed,
+  appliedLabel = "Applied",
+  notAppliedLabel = "Not Yet Applied",
 }: {
   claimed: number;
   unclaimed: number;
+  appliedLabel?: string;
+  notAppliedLabel?: string;
 }) {
   const total = claimed + unclaimed;
   const claimedPct = total > 0 ? (claimed / total) * 100 : 0;

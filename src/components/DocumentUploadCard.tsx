@@ -30,6 +30,7 @@ export const DocumentUploadCard = ({
   status,
   progress: ocrProgress,
   fieldCount,
+  avgConfidence,
   fileName,
   disabled,
   onFileSelect,

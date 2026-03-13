@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { Shield, Send, Bot, User, Loader2 } from "lucide-react";
+import { Shield, Send, Bot, User, Loader2, Sparkles } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ChatMessage } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PageTransition } from "@/components/PageTransition";
 
 const incomeMap: Record<string, number> = {
   "Below ₹1 lakh": 80000,
@@ -38,7 +39,7 @@ const Questions = () => {
   const chatRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
-  const estimatedTotal = 6; // Estimated max questions
+  const estimatedTotal = 6;
   const progress = Math.min((questionsAsked / estimatedTotal) * 100, 95);
 
   const fetchNextQuestion = useCallback(async (history: { role: string; content: string }[], currentProfile: any) => {
@@ -47,20 +48,11 @@ const Questions = () => {
       const { data, error } = await supabase.functions.invoke("smart-questions", {
         body: { profile: currentProfile, conversationHistory: history },
       });
-
       if (error) throw error;
-
-      if (data.error) {
-        // Handle rate limits / payment
-        toast.error(data.error);
-        setLoading(false);
-        return;
-      }
+      if (data.error) { toast.error(data.error); setLoading(false); return; }
 
       const q = data as AIQuestion;
-
       if (q.complete) {
-        // AI says we have enough info
         syncProfileToServer();
         setMessages(prev => [
           ...prev,
@@ -68,29 +60,18 @@ const Questions = () => {
           { id: "done", role: "assistant" as const, content: "I have enough information now. Let me find the best government schemes for you! 🎉" },
         ]);
         setLoading(false);
-        setTimeout(() => {
-          navigate("/schemes");
-          toast.success("Profile complete! Showing your matched schemes.");
-        }, 1500);
+        setTimeout(() => { navigate("/schemes"); toast.success("Profile complete! Showing your matched schemes."); }, 1500);
         return;
       }
 
       setCurrentQuestion(q);
       const newMessages: ChatMessage[] = [];
-      if (q.greeting) {
-        newMessages.push({ id: `g-${questionsAsked}`, role: "assistant", content: q.greeting });
-      }
-      newMessages.push({
-        id: `q-${questionsAsked}`,
-        role: "assistant",
-        content: q.question,
-        suggestions: q.suggestions,
-      });
+      if (q.greeting) newMessages.push({ id: `g-${questionsAsked}`, role: "assistant", content: q.greeting });
+      newMessages.push({ id: `q-${questionsAsked}`, role: "assistant", content: q.question, suggestions: q.suggestions });
       setMessages(prev => [...prev, ...newMessages]);
     } catch (err) {
       console.error("Failed to fetch AI question:", err);
       toast.error("Failed to generate question. Using fallback.");
-      // Fallback to basic questions
       fallbackQuestion();
     }
     setLoading(false);
@@ -107,13 +88,8 @@ const Questions = () => {
   const fallbackQuestion = () => {
     const q = fallbackQuestions[fallbackIndex.current % fallbackQuestions.length];
     fallbackIndex.current++;
-    // Skip if already answered
     if ((profile as any)[q.key]) {
-      if (fallbackIndex.current < fallbackQuestions.length) {
-        fallbackQuestion();
-        return;
-      }
-      // All done
+      if (fallbackIndex.current < fallbackQuestions.length) { fallbackQuestion(); return; }
       syncProfileToServer();
       setMessages(prev => [...prev, { id: "done", role: "assistant", content: "Profile complete! Let me find schemes for you! 🎉" }]);
       setTimeout(() => navigate("/schemes"), 1500);
@@ -123,19 +99,14 @@ const Questions = () => {
     setMessages(prev => [...prev, { id: `q-${questionsAsked}`, role: "assistant", content: q.question, suggestions: q.suggestions }]);
   };
 
-  // Initialize
   useEffect(() => {
     if (initialized.current) return;
     initialized.current = true;
-
-    setMessages([
-      {
-        id: "welcome",
-        role: "assistant",
-        content: `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask you a few smart questions to find the best government schemes for you. Your answers help me personalize recommendations.`,
-      },
-    ]);
-
+    setMessages([{
+      id: "welcome",
+      role: "assistant",
+      content: `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask you a few smart questions to find the best government schemes for you. Your answers help me personalize recommendations.`,
+    }]);
     fetchNextQuestion([], profile);
   }, []);
 
@@ -145,11 +116,8 @@ const Questions = () => {
 
   const handleAnswer = async (answer: string) => {
     if (!currentQuestion || loading) return;
-
-    // Add user message
     setMessages(prev => [...prev, { id: `u-${questionsAsked}`, role: "user", content: answer }]);
 
-    // Update profile
     let value: any = answer;
     if (currentQuestion.key === "hasDisability") value = answer !== "No";
     if (currentQuestion.key === "hasBankAccount") value = answer === "Yes";
@@ -158,7 +126,6 @@ const Questions = () => {
     const updatedProfile = { ...profile, [currentQuestion.key]: value };
     setProfile(prev => ({ ...prev, [currentQuestion.key]: value }));
 
-    // Update conversation history for AI context
     const newHistory = [
       ...conversationHistory,
       { role: "assistant", content: currentQuestion.question },
@@ -168,96 +135,125 @@ const Questions = () => {
     setQuestionsAsked(prev => prev + 1);
     setCurrentQuestion(null);
     setInput("");
-
-    // Fetch next AI question
     await fetchNextQuestion(newHistory, updatedProfile);
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-md">
-        <div className="container flex h-14 items-center gap-3">
-          <Shield className="h-5 w-5 text-primary" />
-          <span className="font-bold">Smart Questions</span>
-          <div className="ml-auto flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              {questionsAsked} answered
-            </span>
-            <Progress value={progress} className="h-1.5 w-24" />
+    <PageTransition>
+      <div className="flex min-h-screen flex-col bg-background">
+        <header className="sticky top-0 z-50 glass-nav">
+          <div className="container flex h-16 items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary">
+              <Sparkles className="h-[18px] w-[18px] text-primary-foreground" />
+            </div>
+            <div className="flex-1">
+              <span className="text-sm font-bold">Smart Questions</span>
+              <p className="text-xs text-muted-foreground">Step 3 of 3</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-medium text-muted-foreground">{questionsAsked} answered</span>
+              <div className="w-20 overflow-hidden rounded-full bg-muted">
+                <motion.div
+                  className="h-1.5 rounded-full gradient-primary"
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Chat area */}
-      <div ref={chatRef} className="flex-1 overflow-y-auto p-4">
-        <div className="mx-auto max-w-xl space-y-4">
-          <AnimatePresence>
-            {messages.map(msg => (
-              <motion.div
-                key={msg.id}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
-              >
-                <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${msg.role === "assistant" ? "bg-primary text-primary-foreground" : "bg-muted"}`}>
-                  {msg.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+        {/* Chat area */}
+        <div ref={chatRef} className="flex-1 overflow-y-auto px-4 py-6">
+          <div className="mx-auto max-w-xl space-y-4">
+            <AnimatePresence>
+              {messages.map(msg => (
+                <motion.div
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className={`flex gap-3 ${msg.role === "user" ? "flex-row-reverse" : ""}`}
+                >
+                  <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                    msg.role === "assistant" 
+                      ? "gradient-primary text-primary-foreground shadow-sm" 
+                      : "bg-muted border border-border"
+                  }`}>
+                    {msg.role === "assistant" ? <Bot className="h-4 w-4" /> : <User className="h-4 w-4" />}
+                  </div>
+                  <div className={`max-w-[80%] rounded-2xl px-4 py-3 text-sm leading-relaxed ${
+                    msg.role === "assistant" 
+                      ? "bg-card border shadow-soft" 
+                      : "gradient-primary text-primary-foreground shadow-sm"
+                  }`}>
+                    {msg.content}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {loading && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full gradient-primary text-primary-foreground shadow-sm">
+                  <Bot className="h-4 w-4" />
                 </div>
-                <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm ${msg.role === "assistant" ? "bg-card border" : "bg-primary text-primary-foreground"}`}>
-                  {msg.content}
+                <div className="rounded-2xl border bg-card px-4 py-3.5 shadow-soft">
+                  <div className="flex items-center gap-2.5 text-xs text-muted-foreground">
+                    <div className="flex gap-1">
+                      <span className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" />
+                      <span className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" style={{ animationDelay: "0.15s" }} />
+                      <span className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" style={{ animationDelay: "0.3s" }} />
+                    </div>
+                    Thinking...
+                  </div>
                 </div>
               </motion.div>
-            ))}
-          </AnimatePresence>
+            )}
+          </div>
+        </div>
 
-          {loading && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-3">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Bot className="h-4 w-4" />
-              </div>
-              <div className="rounded-2xl border bg-card px-4 py-3">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Thinking...
-                </div>
-              </div>
-            </motion.div>
-          )}
+        {/* Suggestions + Input */}
+        <div className="border-t bg-card/80 backdrop-blur-xl p-4">
+          <div className="mx-auto max-w-xl">
+            {currentQuestion?.suggestions && !loading && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mb-3 flex flex-wrap gap-2"
+              >
+                {currentQuestion.suggestions.map(s => (
+                  <Button
+                    key={s}
+                    size="sm"
+                    variant="outline"
+                    className="rounded-full border-primary/20 text-xs hover:bg-primary/5 hover:border-primary/40 transition-all"
+                    onClick={() => handleAnswer(s)}
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </motion.div>
+            )}
+            <form
+              className="flex gap-2"
+              onSubmit={e => { e.preventDefault(); if (input.trim()) handleAnswer(input.trim()); }}
+            >
+              <Input
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                placeholder="Type your answer..."
+                className="h-11 flex-1 rounded-xl"
+                disabled={loading || !currentQuestion}
+              />
+              <Button type="submit" size="icon" className="h-11 w-11 rounded-xl shadow-sm" disabled={!input.trim() || loading || !currentQuestion}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
+          </div>
         </div>
       </div>
-
-      {/* Suggestions + Input */}
-      <div className="border-t bg-card p-4">
-        <div className="mx-auto max-w-xl">
-          {currentQuestion?.suggestions && !loading && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {currentQuestion.suggestions.map(s => (
-                <Button key={s} size="sm" variant="outline" className="rounded-full text-xs" onClick={() => handleAnswer(s)}>
-                  {s}
-                </Button>
-              ))}
-            </div>
-          )}
-          <form
-            className="flex gap-2"
-            onSubmit={e => {
-              e.preventDefault();
-              if (input.trim()) handleAnswer(input.trim());
-            }}
-          >
-            <Input
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Type your answer..."
-              className="flex-1"
-              disabled={loading || !currentQuestion}
-            />
-            <Button type="submit" size="icon" disabled={!input.trim() || loading || !currentQuestion}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
-        </div>
-      </div>
-    </div>
+    </PageTransition>
   );
 };
 

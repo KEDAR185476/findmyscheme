@@ -43,7 +43,7 @@ const FIELD_LABELS: Record<string, string> = {
 };
 
 // The minimum set of fields to always show, even if not extracted
-const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "income", "category"];
+const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "income", "category", "residency"];
 
 const Verify = () => {
   const navigate = useNavigate();

@@ -11,6 +11,7 @@ import Verify from "./pages/Verify.tsx";
 import Questions from "./pages/Questions.tsx";
 import Schemes from "./pages/Schemes.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
+import ExplainEligibility from "./pages/ExplainEligibility.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();

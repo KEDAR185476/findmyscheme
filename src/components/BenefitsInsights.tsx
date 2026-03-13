@@ -275,7 +275,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
             {/* Header */}
             <div className="mb-5 flex items-center gap-2">
               <IndianRupee className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold text-foreground">Total Benefits Available</span>
+              <span className="text-sm font-semibold text-foreground">{t("total_benefits")}</span>
             </div>
 
             {/* Animated counter + donut */}

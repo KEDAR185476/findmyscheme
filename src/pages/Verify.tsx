@@ -12,32 +12,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { INDIAN_STATES } from "@/types";
 import { toast } from "sonner";
 
-const mockOcrData: Record<string, Record<string, { value: string; confidence: number }>> = {
-  aadhaar: {
-    name: { value: "Rajesh Kumar", confidence: 0.95 },
-    dob: { value: "1990-05-15", confidence: 0.88 },
-    gender: { value: "male", confidence: 0.99 },
-    address: { value: "123 Main Street, Block A", confidence: 0.72 },
-    state: { value: "Uttar Pradesh", confidence: 0.85 },
-    district: { value: "Lucknow", confidence: 0.80 },
-    aadhaarNumber: { value: "1234-5678-9012", confidence: 0.92 },
-  },
-  pan: {
-    name: { value: "Rajesh Kumar", confidence: 0.97 },
-    panNumber: { value: "ABCDE1234F", confidence: 0.96 },
-    dob: { value: "1990-05-15", confidence: 0.90 },
-  },
-  ration: {
-    category: { value: "BPL", confidence: 0.88 },
-    income: { value: "120000", confidence: 0.70 },
-  },
-  income: {
-    income: { value: "150000", confidence: 0.85 },
-  },
-  caste: {
-    casteCategory: { value: "OBC", confidence: 0.92 },
-  },
-};
 
 const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
   const color = confidence >= 0.9 ? "text-success" : confidence >= 0.75 ? "text-warning" : "text-destructive";

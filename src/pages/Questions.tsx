@@ -9,6 +9,8 @@ import { ChatMessage } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageTransition } from "@/components/PageTransition";
+import { ThemeLangSwitcher } from "@/components/ThemeLangSwitcher";
+import { useTranslation } from "react-i18next";
 
 const MAX_QUESTIONS = 4;
 
@@ -30,6 +32,7 @@ interface AIQuestion {
 
 const Questions = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { profile, setProfile, syncProfileToServer } = useAuth();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [currentQuestion, setCurrentQuestion] = useState<AIQuestion | null>(null);
@@ -51,21 +54,20 @@ const Questions = () => {
     newMessages.push({
       id: "done",
       role: "assistant",
-      content: "I have everything I need! Let me find the best government schemes for you 🎉",
+      content: t("all_done"),
     });
     setMessages(prev => [...prev, ...newMessages]);
     setLoading(false);
     setTimeout(() => {
       navigate("/schemes");
-      toast.success("Profile complete! Showing your matched schemes.");
+      toast.success(t("profile_complete"));
     }, 1200);
-  }, [syncProfileToServer, navigate]);
+  }, [syncProfileToServer, navigate, t]);
 
   const fetchNextQuestion = useCallback(
     async (history: { role: string; content: string }[], currentProfile: any, asked: number) => {
-      // Client-side hard cap enforcement
       if (asked >= MAX_QUESTIONS) {
-        completeAndNavigate("That's all the questions I needed!");
+        completeAndNavigate(t("thats_all_needed"));
         return;
       }
 
@@ -90,26 +92,25 @@ const Questions = () => {
         setMessages(prev => [...prev, ...newMessages]);
       } catch (err) {
         console.error("Failed to fetch AI question:", err);
-        toast.error("Failed to generate question. Using fallback.");
+        toast.error(t("question_failed"));
         fallbackQuestion(asked);
       }
       setLoading(false);
     },
-    [completeAndNavigate]
+    [completeAndNavigate, t]
   );
 
-  // Minimal fallback — single high-impact question
   const fallbackQuestion = (asked: number) => {
     if (asked >= MAX_QUESTIONS || profile.employmentStatus) {
       completeAndNavigate();
       return;
     }
     const q: AIQuestion = {
-      question: "What best describes your current situation?",
+      question: t("fallback_question"),
       key: "employmentStatus",
-      suggestions: ["Student", "Farmer", "Salaried", "Business Owner", "Self-Employed", "Unemployed", "Retired"],
+      suggestions: [t("student"), t("farmer"), t("salaried"), t("business_owner"), t("self_employed"), t("unemployed"), t("retired")],
       complete: false,
-      greeting: "Just one quick question!",
+      greeting: t("just_one_question"),
     };
     setCurrentQuestion(q);
     setMessages(prev => [
@@ -123,7 +124,6 @@ const Questions = () => {
     if (initialized.current) return;
     initialized.current = true;
 
-    // Count how many fields are already filled from OCR
     const filledFields = ["name", "dob", "gender", "address", "state", "income", "employmentStatus"]
       .filter(k => {
         const v = (profile as any)[k];
@@ -131,8 +131,8 @@ const Questions = () => {
       });
 
     const welcomeMsg = filledFields.length >= 5
-      ? `Great news${profile.name ? `, ${profile.name}` : ""}! Your documents filled most of your profile. I just need to confirm a couple of things.`
-      : `Hi${profile.name ? ` ${profile.name}` : ""}! I'll ask just 1–2 quick questions to match you with the right schemes.`;
+      ? t("welcome_questions_filled", { name: profile.name ? `, ${profile.name}` : "" })
+      : t("welcome_questions", { name: profile.name ? ` ${profile.name}` : "" });
 
     setMessages([{ id: "welcome", role: "assistant", content: welcomeMsg }]);
     fetchNextQuestion([], profile, 0);
@@ -177,14 +177,14 @@ const Questions = () => {
               <Sparkles className="h-[18px] w-[18px] text-primary-foreground" />
             </div>
             <div className="flex-1">
-              <span className="text-sm font-bold">Quick Questions</span>
-              <p className="text-xs text-muted-foreground">Step 3 of 3 • Just 1–3 questions</p>
+              <span className="text-sm font-bold">{t("quick_questions")}</span>
+              <p className="text-xs text-muted-foreground">{t("questions_step")} • {t("just_questions")}</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1">
                 <Zap className="h-3.5 w-3.5 text-primary" />
                 <span className="text-xs font-semibold text-primary">
-                  {questionsAsked === 0 ? "Starting" : `${questionsAsked} of ~3`}
+                  {questionsAsked === 0 ? t("starting") : `${questionsAsked} ${t("of_about")}`}
                 </span>
               </div>
               <div className="w-16 overflow-hidden rounded-full bg-muted">
@@ -194,6 +194,7 @@ const Questions = () => {
                   transition={{ duration: 0.5 }}
                 />
               </div>
+              <ThemeLangSwitcher />
             </div>
           </div>
         </header>
@@ -244,7 +245,7 @@ const Questions = () => {
                       <span className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" style={{ animationDelay: "0.15s" }} />
                       <span className="h-2 w-2 rounded-full bg-primary/40 animate-pulse-soft" style={{ animationDelay: "0.3s" }} />
                     </div>
-                    Thinking...
+                    {t("thinking")}
                   </div>
                 </div>
               </motion.div>
@@ -284,7 +285,7 @@ const Questions = () => {
               <Input
                 value={input}
                 onChange={e => setInput(e.target.value)}
-                placeholder="Type your answer..."
+                placeholder={t("type_answer")}
                 className="h-11 flex-1 rounded-xl"
                 disabled={loading || !currentQuestion}
               />

@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { AppHeader } from "@/components/AppHeader";
+import { useTranslation } from "react-i18next";
 import ReactMarkdown from "react-markdown";
 
 // ─── Types ─────────────────────────────────────────────
@@ -100,7 +101,6 @@ function analyzeEligibility(scheme: Scheme, profile: any): EligibilityCondition[
     });
   }
 
-  // Always add "All India" as a matched condition for central schemes
   if (scheme.state === "All India") {
     conditions.push({
       label: "Region", field: "region",
@@ -123,16 +123,9 @@ function parseBenefitAmount(benefits: string): number {
 
 // ─── Graph Node Component ──────────────────────────────
 function GraphNode({
-  label,
-  value,
-  matched,
-  delay,
-  type,
+  label, value, matched, delay, type,
 }: {
-  label: string;
-  value: string;
-  matched?: boolean;
-  delay: number;
+  label: string; value: string; matched?: boolean; delay: number;
   type: "citizen" | "scheme" | "result";
 }) {
   const colors = {
@@ -142,8 +135,7 @@ function GraphNode({
   };
 
   const iconColors = {
-    citizen: "text-primary",
-    scheme: "text-accent",
+    citizen: "text-primary", scheme: "text-accent",
     result: matched ? "text-success" : "text-destructive",
   };
 
@@ -171,15 +163,10 @@ function GraphNode({
 
 // ─── Graph Section ─────────────────────────────────────
 function EligibilityGraph({
-  conditions,
-  profile,
-  scheme,
-  score,
+  conditions, profile, scheme, score, t,
 }: {
-  conditions: EligibilityCondition[];
-  profile: any;
-  scheme: MatchedScheme;
-  score: number;
+  conditions: EligibilityCondition[]; profile: any; scheme: MatchedScheme; score: number;
+  t: (key: string, opts?: any) => string;
 }) {
   const [phase, setPhase] = useState<1 | 2 | 3>(1);
 
@@ -191,24 +178,23 @@ function EligibilityGraph({
   }, [scheme.id]);
 
   const citizenNodes = [
-    { label: "Age", value: profile.dob ? `${Math.floor((Date.now() - new Date(profile.dob).getTime()) / 31557600000)} years` : "—" },
-    { label: "Occupation", value: profile.employmentStatus || profile.occupationType || "—" },
-    { label: "Income", value: profile.income ? `₹${profile.income.toLocaleString("en-IN")}` : "—" },
-    { label: "State", value: profile.state || "—" },
-    { label: "Category", value: [profile.category, profile.casteCategory].filter(Boolean).join(", ") || "—" },
-    { label: "Gender", value: profile.gender || "—" },
+    { label: t("age"), value: profile.dob ? `${Math.floor((Date.now() - new Date(profile.dob).getTime()) / 31557600000)} ${t("years")}` : "—" },
+    { label: t("occupation"), value: profile.employmentStatus || profile.occupationType || "—" },
+    { label: t("income_label"), value: profile.income ? `₹${profile.income.toLocaleString("en-IN")}` : "—" },
+    { label: t("state"), value: profile.state || "—" },
+    { label: t("category_label"), value: [profile.category, profile.casteCategory].filter(Boolean).join(", ") || "—" },
+    { label: t("gender"), value: profile.gender || "—" },
   ].filter(n => n.value !== "—");
 
   const schemeNodes = conditions.map(c => ({ label: c.label, value: c.required }));
 
   return (
     <div className="space-y-6">
-      {/* Phase labels */}
       <div className="flex items-center gap-2 text-xs">
         {[
-          { n: 1, label: "Your Profile", color: "bg-primary" },
-          { n: 2, label: "Scheme Rules", color: "bg-accent" },
-          { n: 3, label: "Match Result", color: "bg-success" },
+          { n: 1, label: t("your_profile"), color: "bg-primary" },
+          { n: 2, label: t("scheme_rules"), color: "bg-accent" },
+          { n: 3, label: t("match_result"), color: "bg-success" },
         ].map(p => (
           <div key={p.n} className={`flex items-center gap-1.5 rounded-full px-3 py-1 transition-all ${phase >= p.n ? `${p.color}/15 font-medium` : "bg-muted text-muted-foreground"}`}>
             <span className={`h-2 w-2 rounded-full ${phase >= p.n ? p.color : "bg-muted-foreground/30"}`} />
@@ -218,15 +204,10 @@ function EligibilityGraph({
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
-        {/* Citizen Graph */}
         <div className="space-y-2">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: phase >= 1 ? 1 : 0.3 }}
-            className="mb-2 flex items-center gap-2"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: phase >= 1 ? 1 : 0.3 }} className="mb-2 flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-primary" />
-            <span className="text-xs font-semibold text-primary">Citizen Graph</span>
+            <span className="text-xs font-semibold text-primary">{t("citizen_graph")}</span>
           </motion.div>
           <AnimatePresence>
             {phase >= 1 && citizenNodes.map((n, i) => (
@@ -235,15 +216,10 @@ function EligibilityGraph({
           </AnimatePresence>
         </div>
 
-        {/* Scheme Graph */}
         <div className="space-y-2">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: phase >= 2 ? 1 : 0.3 }}
-            className="mb-2 flex items-center gap-2"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: phase >= 2 ? 1 : 0.3 }} className="mb-2 flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-accent" />
-            <span className="text-xs font-semibold text-accent">Scheme Rules</span>
+            <span className="text-xs font-semibold text-accent">{t("scheme_rules")}</span>
           </motion.div>
           <AnimatePresence>
             {phase >= 2 && schemeNodes.map((n, i) => (
@@ -252,30 +228,17 @@ function EligibilityGraph({
           </AnimatePresence>
         </div>
 
-        {/* Intersection Graph */}
         <div className="space-y-2">
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: phase >= 3 ? 1 : 0.3 }}
-            className="mb-2 flex items-center gap-2"
-          >
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: phase >= 3 ? 1 : 0.3 }} className="mb-2 flex items-center gap-2">
             <div className="h-3 w-3 rounded-full bg-success" />
-            <span className="text-xs font-semibold text-success">Match Result</span>
+            <span className="text-xs font-semibold text-success">{t("match_result")}</span>
           </motion.div>
           <AnimatePresence>
             {phase >= 3 && conditions.map((c, i) => (
-              <GraphNode
-                key={c.label}
-                label={c.label}
-                value={c.matched ? `✓ ${c.actual}` : `✗ ${c.actual}`}
-                matched={c.matched}
-                delay={i * 0.12}
-                type="result"
-              />
+              <GraphNode key={c.label} label={c.label} value={c.matched ? `✓ ${c.actual}` : `✗ ${c.actual}`} matched={c.matched} delay={i * 0.12} type="result" />
             ))}
           </AnimatePresence>
 
-          {/* Score badge */}
           {phase >= 3 && (
             <motion.div
               initial={{ opacity: 0, scale: 0.8 }}
@@ -284,18 +247,12 @@ function EligibilityGraph({
               className="mt-3 flex items-center justify-center"
             >
               <div className={`rounded-2xl px-5 py-3 text-center ${
-                score >= 70
-                  ? "bg-success/10 border border-success/30"
-                  : score >= 40
-                  ? "bg-warning/10 border border-warning/30"
+                score >= 70 ? "bg-success/10 border border-success/30"
+                  : score >= 40 ? "bg-warning/10 border border-warning/30"
                   : "bg-destructive/10 border border-destructive/30"
               }`}>
-                <p className={`text-2xl font-bold ${
-                  score >= 70 ? "text-success" : score >= 40 ? "text-warning" : "text-destructive"
-                }`}>
-                  {score}%
-                </p>
-                <p className="text-[10px] font-medium text-muted-foreground">Eligibility Score</p>
+                <p className={`text-2xl font-bold ${score >= 70 ? "text-success" : score >= 40 ? "text-warning" : "text-destructive"}`}>{score}%</p>
+                <p className="text-[10px] font-medium text-muted-foreground">{t("eligibility_score")}</p>
               </div>
             </motion.div>
           )}
@@ -306,14 +263,9 @@ function EligibilityGraph({
 }
 
 // ─── Mini Chatbot ──────────────────────────────────────
-function GapChatbot({
-  scheme,
-  profile,
-  gaps,
-}: {
-  scheme: MatchedScheme | null;
-  profile: any;
-  gaps: EligibilityCondition[];
+function GapChatbot({ scheme, profile, gaps, t }: {
+  scheme: MatchedScheme | null; profile: any; gaps: EligibilityCondition[];
+  t: (key: string) => string;
 }) {
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -324,20 +276,17 @@ function GapChatbot({
     chatRef.current?.scrollTo({ top: chatRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  // Reset on scheme change
-  useEffect(() => {
-    setMessages([]);
-  }, [scheme?.id]);
+  useEffect(() => { setMessages([]); }, [scheme?.id]);
 
   const suggestions = useMemo(() => {
-    if (!scheme) return ["How can I increase my eligibility?"];
+    if (!scheme) return [t("how_increase_eligibility")];
     const s: string[] = [];
-    if (gaps.length > 0) s.push(`How can I become eligible for ${scheme.name}?`);
-    s.push("What documents do I need?");
-    if (gaps.some(g => g.field === "occupation")) s.push("How do I register as MSME?");
-    s.push("How to apply for this scheme?");
+    if (gaps.length > 0) s.push(t("how_become_eligible_for", { name: scheme.name }));
+    s.push(t("what_docs_needed"));
+    if (gaps.some(g => g.field === "occupation")) s.push(t("how_register_msme"));
+    s.push(t("how_to_apply"));
     return s.slice(0, 3);
-  }, [scheme, gaps]);
+  }, [scheme, gaps, t]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;
@@ -359,13 +308,13 @@ function GapChatbot({
       if (error) throw error;
       setMessages(prev => [
         ...prev,
-        { id: `a-${Date.now()}`, role: "assistant", content: data.reply || data.error || "Sorry, I couldn't respond." },
+        { id: `a-${Date.now()}`, role: "assistant", content: data.reply || data.error || t("chatbot_no_response") },
       ]);
     } catch {
-      toast.error("Failed to get response");
+      toast.error(t("chatbot_error"));
       setMessages(prev => [
         ...prev,
-        { id: `a-${Date.now()}`, role: "assistant", content: "Sorry, I'm having trouble connecting. Please try again." },
+        { id: `a-${Date.now()}`, role: "assistant", content: t("chatbot_connection_error") },
       ]);
     }
     setLoading(false);
@@ -376,15 +325,12 @@ function GapChatbot({
       <CardContent className="p-4">
         <div className="flex items-center gap-2 mb-3">
           <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">Eligibility Assistant</span>
+          <span className="text-sm font-semibold">{t("eligibility_assistant")}</span>
         </div>
 
-        {/* Messages */}
         <div ref={chatRef} className="max-h-[240px] min-h-[100px] overflow-y-auto space-y-2.5 mb-3">
           {messages.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">
-              Ask me about eligibility gaps, required documents, or how to apply.
-            </p>
+            <p className="text-xs text-muted-foreground text-center py-4">{t("ask_about_eligibility")}</p>
           )}
           {messages.map(msg => (
             <div key={msg.id} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
@@ -409,37 +355,23 @@ function GapChatbot({
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                 <Loader2 className="h-3 w-3 animate-spin text-primary" />
               </div>
-              <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">Thinking...</div>
+              <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">{t("thinking")}</div>
             </div>
           )}
         </div>
 
-        {/* Suggestions */}
         {messages.length === 0 && (
           <div className="flex flex-wrap gap-1.5 mb-3">
             {suggestions.map(s => (
-              <Button
-                key={s}
-                size="sm"
-                variant="outline"
-                className="h-7 rounded-full text-[10px] border-primary/20"
-                onClick={() => sendMessage(s)}
-              >
+              <Button key={s} size="sm" variant="outline" className="h-7 rounded-full text-[10px] border-primary/20" onClick={() => sendMessage(s)}>
                 {s}
               </Button>
             ))}
           </div>
         )}
 
-        {/* Input */}
         <form className="flex gap-2" onSubmit={e => { e.preventDefault(); sendMessage(input); }}>
-          <Input
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="Ask about eligibility..."
-            className="h-8 text-xs rounded-lg flex-1"
-            disabled={loading}
-          />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={t("ask_eligibility_placeholder")} className="h-8 text-xs rounded-lg flex-1" disabled={loading} />
           <Button type="submit" size="icon" className="h-8 w-8 rounded-lg" disabled={!input.trim() || loading}>
             <Send className="h-3 w-3" />
           </Button>
@@ -452,6 +384,7 @@ function GapChatbot({
 // ─── Main Page ─────────────────────────────────────────
 const ExplainEligibility = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { profile } = useAuth();
   const [selectedScheme, setSelectedScheme] = useState<MatchedScheme | null>(null);
 
@@ -472,15 +405,14 @@ const ExplainEligibility = () => {
 
   return (
     <PageTransition>
-      <AppHeader title="Explain Eligibility">
+      <AppHeader title={t("explain_title")}>
         <Button variant="ghost" size="sm" className="rounded-full" onClick={() => navigate("/dashboard")}>
-          <Home className="mr-1.5 h-4 w-4" /> Dashboard
+          <Home className="mr-1.5 h-4 w-4" /> {t("dashboard")}
         </Button>
       </AppHeader>
 
       <div className="container max-w-5xl py-8 md:py-10">
         <StaggerContainer>
-          {/* Header */}
           <StaggerItem>
             <div className="mb-8">
               <div className="flex items-center gap-2 mb-2">
@@ -488,19 +420,15 @@ const ExplainEligibility = () => {
                   <Target className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight">Explainable AI</h1>
-                  <p className="text-sm text-muted-foreground">
-                    See exactly how your eligibility is determined
-                  </p>
+                  <h1 className="text-2xl font-bold tracking-tight">{t("explainable_ai")}</h1>
+                  <p className="text-sm text-muted-foreground">{t("see_how_determined")}</p>
                 </div>
               </div>
             </div>
           </StaggerItem>
 
           <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-            {/* Main content */}
             <div className="space-y-6">
-              {/* Graph Visualization */}
               <StaggerItem>
                 <Card className="border-border/60 shadow-soft overflow-hidden">
                   <CardContent className="p-6">
@@ -509,7 +437,7 @@ const ExplainEligibility = () => {
                         <div className="flex items-center justify-between mb-5">
                           <div className="flex items-center gap-2">
                             <Sparkles className="h-4 w-4 text-primary" />
-                            <span className="text-sm font-semibold">Eligibility Analysis</span>
+                            <span className="text-sm font-semibold">{t("eligibility_analysis")}</span>
                           </div>
                           <Badge variant="secondary" className="text-xs">
                             {SCHEME_CATEGORIES[selectedScheme.category]?.icon}{" "}
@@ -518,68 +446,51 @@ const ExplainEligibility = () => {
                         </div>
                         <h3 className="font-bold text-lg mb-1">{selectedScheme.name}</h3>
                         <p className="text-xs text-muted-foreground mb-5">{selectedScheme.description}</p>
-                        <EligibilityGraph
-                          conditions={conditions}
-                          profile={profile}
-                          scheme={selectedScheme}
-                          score={selectedScheme.matchScore}
-                        />
+                        <EligibilityGraph conditions={conditions} profile={profile} scheme={selectedScheme} score={selectedScheme.matchScore} t={t} />
                       </>
                     ) : (
                       <div className="py-16 text-center">
                         <Target className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">Select a scheme below</p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
-                          to see the graph-based eligibility explanation
-                        </p>
+                        <p className="text-sm font-medium text-muted-foreground">{t("select_scheme_below")}</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">{t("to_see_graph")}</p>
                       </div>
                     )}
                   </CardContent>
                 </Card>
               </StaggerItem>
 
-              {/* Gap Analyzer */}
               {selectedScheme && gaps.length > 0 && (
                 <StaggerItem>
                   <Card className="border-border/60 shadow-soft">
                     <CardContent className="p-6">
                       <div className="flex items-center gap-2 mb-4">
                         <AlertTriangle className="h-4 w-4 text-warning" />
-                        <span className="text-sm font-semibold">Eligibility Gap Analysis</span>
+                        <span className="text-sm font-semibold">{t("gap_analysis")}</span>
                       </div>
 
                       <div className="space-y-3 mb-5">
                         {gaps.map((g, i) => (
-                          <motion.div
-                            key={g.label}
-                            initial={{ opacity: 0, x: -8 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: i * 0.1 }}
-                            className="flex items-start gap-3 rounded-xl border border-destructive/15 bg-destructive/5 px-4 py-3"
-                          >
+                          <motion.div key={g.label} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.1 }} className="flex items-start gap-3 rounded-xl border border-destructive/15 bg-destructive/5 px-4 py-3">
                             <XCircle className="h-4 w-4 shrink-0 text-destructive mt-0.5" />
                             <div>
                               <p className="text-sm font-medium">{g.label}</p>
                               <p className="text-xs text-muted-foreground">
-                                Required: <strong>{g.required}</strong> · Your value: <strong>{g.actual}</strong>
+                                {t("required_label")}: <strong>{g.required}</strong> · {t("your_value")}: <strong>{g.actual}</strong>
                               </p>
                             </div>
                           </motion.div>
                         ))}
                       </div>
 
-                      {/* Gap Bridging Guidance */}
                       <div className="rounded-xl border border-primary/15 bg-primary/5 px-4 py-4">
                         <div className="flex items-center gap-2 mb-3">
                           <Lightbulb className="h-4 w-4 text-primary" />
-                          <span className="text-sm font-semibold text-primary">How to Become Eligible</span>
+                          <span className="text-sm font-semibold text-primary">{t("how_to_eligible")}</span>
                         </div>
                         <div className="space-y-2">
                           {gaps.map((g, i) => (
                             <div key={g.label} className="flex items-start gap-2">
-                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">
-                                {i + 1}
-                              </span>
+                              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[10px] font-bold text-primary">{i + 1}</span>
                               <p className="text-xs text-foreground/80">
                                 {g.field === "occupation" && `Register or update your occupation to: ${g.required}`}
                                 {g.field === "income" && `Your income needs to be ${g.required}. Check if you qualify under different income criteria.`}
@@ -593,22 +504,13 @@ const ExplainEligibility = () => {
                           ))}
                         </div>
 
-                        {/* Future opportunity */}
                         {selectedScheme.matchScore >= 40 && (
-                          <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ delay: 0.5 }}
-                            className="mt-4 flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2"
-                          >
+                          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="mt-4 flex items-center gap-2 rounded-lg bg-success/10 px-3 py-2">
                             <TrendingUp className="h-4 w-4 text-success" />
                             <div>
-                              <p className="text-xs font-medium text-success">Future Opportunity</p>
+                              <p className="text-xs font-medium text-success">{t("future_opportunity")}</p>
                               <p className="text-[10px] text-muted-foreground">
-                                After completing {gaps.length} step{gaps.length !== 1 ? "s" : ""}, estimated score:{" "}
-                                <strong className="text-success">
-                                  {Math.min(selectedScheme.matchScore + gaps.length * 12, 98)}%
-                                </strong>
+                                {t("future_eligible_desc")} — {t("estimated_future_score")}: <strong className="text-success">{Math.min(selectedScheme.matchScore + gaps.length * 12, 98)}%</strong>
                               </p>
                             </div>
                           </motion.div>
@@ -619,23 +521,16 @@ const ExplainEligibility = () => {
                 </StaggerItem>
               )}
 
-              {/* All matched — no gaps */}
               {selectedScheme && gaps.length === 0 && (
                 <StaggerItem>
                   <Card className="border-success/30 bg-success/5 shadow-soft">
                     <CardContent className="p-6 text-center">
                       <CheckCircle2 className="mx-auto h-10 w-10 text-success mb-3" />
-                      <p className="font-semibold text-success">Fully Eligible!</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        You meet all {matched.length} requirements for this scheme.
-                      </p>
+                      <p className="font-semibold text-success">{t("fully_eligible")}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{t("meet_all_requirements", { count: matched.length })}</p>
                       {selectedScheme.applicationUrl && (
-                        <Button
-                          className="mt-4 rounded-full"
-                          size="sm"
-                          onClick={() => window.open(selectedScheme.applicationUrl, "_blank")}
-                        >
-                          Apply Now <ArrowRight className="ml-1 h-3 w-3" />
+                        <Button className="mt-4 rounded-full" size="sm" onClick={() => window.open(selectedScheme.applicationUrl, "_blank")}>
+                          {t("apply_now")} <ArrowRight className="ml-1 h-3 w-3" />
                         </Button>
                       )}
                     </CardContent>
@@ -643,13 +538,12 @@ const ExplainEligibility = () => {
                 </StaggerItem>
               )}
 
-              {/* Scheme Cards */}
               <StaggerItem>
                 <div>
                   <div className="flex items-center justify-between mb-4">
                     <h2 className="text-sm font-semibold flex items-center gap-2">
                       <FileText className="h-4 w-4 text-muted-foreground" />
-                      Select a Scheme to Explain ({matchedSchemes.length})
+                      {t("select_scheme_to_explain", { count: matchedSchemes.length })}
                     </h2>
                   </div>
                   <div className="grid gap-2.5 sm:grid-cols-2">
@@ -657,20 +551,8 @@ const ExplainEligibility = () => {
                       const isSelected = selectedScheme?.id === scheme.id;
                       const amount = parseBenefitAmount(scheme.benefits);
                       return (
-                        <motion.div
-                          key={scheme.id}
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.05 * i }}
-                        >
-                          <Card
-                            className={`cursor-pointer transition-all duration-200 hover:-translate-y-0.5 ${
-                              isSelected
-                                ? "border-primary ring-2 ring-primary/20 shadow-card"
-                                : "border-border/60 shadow-soft hover:shadow-card-hover"
-                            }`}
-                            onClick={() => setSelectedScheme(scheme)}
-                          >
+                        <motion.div key={scheme.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 * i }}>
+                          <Card className={`cursor-pointer transition-all duration-200 hover:-translate-y-0.5 ${isSelected ? "border-primary ring-2 ring-primary/20 shadow-card" : "border-border/60 shadow-soft hover:shadow-card-hover"}`} onClick={() => setSelectedScheme(scheme)}>
                             <CardContent className="p-3.5">
                               <div className="flex items-start justify-between gap-2">
                                 <div className="min-w-0 flex-1">
@@ -687,12 +569,7 @@ const ExplainEligibility = () => {
                                   </div>
                                   <h3 className="text-xs font-semibold truncate">{scheme.name}</h3>
                                 </div>
-                                <Badge
-                                  variant={scheme.matchScore >= 70 ? "default" : "secondary"}
-                                  className="shrink-0 text-xs font-bold"
-                                >
-                                  {scheme.matchScore}%
-                                </Badge>
+                                <Badge variant={scheme.matchScore >= 70 ? "default" : "secondary"} className="shrink-0 text-xs font-bold">{scheme.matchScore}%</Badge>
                               </div>
                             </CardContent>
                           </Card>
@@ -704,10 +581,9 @@ const ExplainEligibility = () => {
               </StaggerItem>
             </div>
 
-            {/* Right sidebar — Chatbot */}
             <div className="space-y-4">
               <StaggerItem>
-                <GapChatbot scheme={selectedScheme} profile={profile} gaps={gaps} />
+                <GapChatbot scheme={selectedScheme} profile={profile} gaps={gaps} t={t} />
               </StaggerItem>
             </div>
           </div>

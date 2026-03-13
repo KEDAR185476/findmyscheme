@@ -52,7 +52,7 @@ const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
 
 const Verify = () => {
   const navigate = useNavigate();
-  const { profile, setProfile } = useAuth();
+  const { profile, setProfile, syncProfileToServer } = useAuth();
   const [fields, setFields] = useState<Record<string, { value: string; confidence: number }>>({});
   const [processing, setProcessing] = useState(true);
 

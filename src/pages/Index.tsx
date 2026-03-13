@@ -177,7 +177,7 @@ const Index = () => {
             <Shield className="h-4 w-4 text-primary" />
             <span className="font-medium text-foreground">FindMyScheme</span>
           </div>
-          <p>© 2025 FindMyScheme. Empowering citizens with information.</p>
+          <p>© 2026 FindMyScheme. Empowering citizens with information.</p>
         </div>
       </footer>
     </div>

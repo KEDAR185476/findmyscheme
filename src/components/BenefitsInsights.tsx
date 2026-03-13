@@ -90,10 +90,12 @@ function DonutChart({
   segments,
   size = 180,
   strokeWidth = 24,
+  centerLabel = "Total Benefits",
 }: {
   segments: { label: string; value: number; color: string }[];
   size?: number;
   strokeWidth?: number;
+  centerLabel?: string;
 }) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;

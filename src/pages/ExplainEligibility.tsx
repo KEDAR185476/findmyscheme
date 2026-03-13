@@ -286,7 +286,8 @@ function GapChatbot({ scheme, profile, gaps, t }: {
     if (gaps.some(g => g.field === "occupation")) s.push(t("how_register_msme"));
     s.push(t("how_to_apply"));
     return s.slice(0, 3);
-  }, [scheme, gaps, t]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [scheme, gaps]);
 
   const sendMessage = async (text: string) => {
     if (!text.trim() || loading) return;

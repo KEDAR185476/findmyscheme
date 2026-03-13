@@ -303,10 +303,33 @@ const Verify = () => {
             </Card>
           </StaggerItem>
 
+          {/* Verification alerts */}
+          {verificationAlerts.length > 0 && (
+            <StaggerItem>
+              <div className="mt-4 space-y-2">
+                {verificationAlerts.map((alert, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 px-5 py-3"
+                  >
+                    <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                    <p className="text-sm text-warning-foreground/90">{alert}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </StaggerItem>
+          )}
+
           <StaggerItem>
             <div className="mt-8 flex justify-end">
-              <Button onClick={handleConfirm} size="lg" className="h-12 rounded-lg px-8 shadow-sm">
-                Confirm & Continue <ArrowRight className="ml-2 h-4 w-4" />
+              <Button onClick={handleConfirm} size="lg" className="h-12 rounded-lg px-8 shadow-sm" disabled={verifying}>
+                {verifying ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
+                ) : (
+                  <>Confirm & Continue <ArrowRight className="ml-2 h-4 w-4" /></>
+                )}
               </Button>
             </div>
           </StaggerItem>

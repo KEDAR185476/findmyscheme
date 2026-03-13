@@ -245,6 +245,39 @@ const Dashboard = () => {
             </div>
           )}
 
+          {/* Future Opportunities */}
+          {futureOpportunities.length > 0 && (
+            <div className="mb-6">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-accent-foreground" /> Future Opportunities ({futureOpportunities.length})
+                  <span className="text-xs font-normal text-muted-foreground">— you may qualify later</span>
+                </h2>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {futureOpportunities.slice(0, 4).map(scheme => (
+                  <Card key={scheme.id} className="cursor-pointer transition-shadow hover:shadow-md opacity-80" onClick={() => navigate("/schemes")}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <Badge variant="secondary" className={`text-xs ${SCHEME_CATEGORIES[scheme.category]?.color || ""}`}>
+                              {SCHEME_CATEGORIES[scheme.category]?.icon} {SCHEME_CATEGORIES[scheme.category]?.label}
+                            </Badge>
+                          </div>
+                          <h3 className="font-medium text-sm truncate">{scheme.name}</h3>
+                          <p className="text-xs text-muted-foreground truncate mt-0.5">{scheme.benefits}</p>
+                        </div>
+                        <Badge variant="outline" className="shrink-0 text-muted-foreground">
+                          {scheme.matchScore}%
+                        </Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+
           {/* Profile Summary */}
           <Card className="mb-6">
             <CardHeader className="flex flex-row items-center justify-between pb-3">

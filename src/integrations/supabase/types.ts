@@ -14,7 +14,129 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      otp_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          id: string
+          phone: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          phone: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          phone?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
+      saved_schemes: {
+        Row: {
+          created_at: string
+          id: string
+          phone: string
+          scheme_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          phone: string
+          scheme_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          phone?: string
+          scheme_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          aadhaar_number: string | null
+          address: string | null
+          caste_category: string | null
+          category: string | null
+          created_at: string
+          district: string | null
+          dob: string | null
+          education_level: string | null
+          employment_status: string | null
+          gender: string | null
+          has_bank_account: boolean | null
+          has_disability: boolean | null
+          id: string
+          income: number | null
+          land_ownership: string | null
+          marital_status: string | null
+          name: string | null
+          onboarding_complete: boolean | null
+          pan_number: string | null
+          phone: string
+          state: string | null
+          updated_at: string
+        }
+        Insert: {
+          aadhaar_number?: string | null
+          address?: string | null
+          caste_category?: string | null
+          category?: string | null
+          created_at?: string
+          district?: string | null
+          dob?: string | null
+          education_level?: string | null
+          employment_status?: string | null
+          gender?: string | null
+          has_bank_account?: boolean | null
+          has_disability?: boolean | null
+          id?: string
+          income?: number | null
+          land_ownership?: string | null
+          marital_status?: string | null
+          name?: string | null
+          onboarding_complete?: boolean | null
+          pan_number?: string | null
+          phone: string
+          state?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aadhaar_number?: string | null
+          address?: string | null
+          caste_category?: string | null
+          category?: string | null
+          created_at?: string
+          district?: string | null
+          dob?: string | null
+          education_level?: string | null
+          employment_status?: string | null
+          gender?: string | null
+          has_bank_account?: boolean | null
+          has_disability?: boolean | null
+          id?: string
+          income?: number | null
+          land_ownership?: string | null
+          marital_status?: string | null
+          name?: string | null
+          onboarding_complete?: boolean | null
+          pan_number?: string | null
+          phone?: string
+          state?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

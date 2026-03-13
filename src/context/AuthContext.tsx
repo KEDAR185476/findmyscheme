@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { UserProfile } from "@/types";
+import { UserProfile, computeAgeRange, computeIncomeRange } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthState {

@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import logo from "@/assets/FindMyScheme_logo.png";
+import { ThemeLangSwitcher } from "@/components/ThemeLangSwitcher";
 
 export const AppHeader = ({
   title,
@@ -16,7 +17,10 @@ export const AppHeader = ({
           {title || "FindMyScheme"}
         </span>
       </Link>
-      {children && <div className="flex items-center gap-2">{children}</div>}
+      <div className="flex items-center gap-2">
+        {children}
+        <ThemeLangSwitcher />
+      </div>
     </div>
   </header>
 );

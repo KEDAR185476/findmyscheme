@@ -138,6 +138,8 @@ const Questions = () => {
     if (nextQ >= questions.length) {
       // Done
       setTyping(true);
+      // Mark onboarding complete and sync to server
+      syncProfileToServer();
       setTimeout(() => {
         setMessages(prev => [
           ...prev,

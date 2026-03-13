@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, AlertCircle, ArrowRight, Trash2, Lock } from "lucide-react";
+import { CheckCircle2, AlertCircle, ArrowRight, Trash2, Lock, ShieldAlert, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { INDIAN_STATES } from "@/types";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { AppHeader } from "@/components/AppHeader";
 

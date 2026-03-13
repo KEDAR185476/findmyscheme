@@ -59,7 +59,7 @@ const UploadPage = () => {
         }
       );
 
-      const fields = parseExtractedText(rawText, type);
+      const fields = await parseExtractedText(rawText, type);
       const fieldCount = Object.keys(fields).length;
       setDocuments(prev => ({ ...prev, [type]: { file, status: "done", progress: 100, fields } }));
       toast.success(`${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted`);

@@ -1,0 +1,16 @@
+{
+  "name": "FindMyScheme - Government Welfare Scheme Discovery",
+  "short_name": "FindMyScheme",
+  "description": "Discover government welfare schemes you're eligible for",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f9fa",
+  "theme_color": "#1a237e",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64",
+      "type": "image/x-icon"
+    }
+  ]
+}

@@ -61,6 +61,8 @@ const Verify = () => {
     if (ocrFields) {
       try { parsed = JSON.parse(ocrFields); } catch (e) { console.error("Failed to parse OCR fields:", e); }
     }
+    // Keep a backup with sensitive fields for verification, then remove from display
+    localStorage.setItem("fms_ocr_fields_backup", JSON.stringify(parsed));
     delete parsed.aadhaarNumber;
     delete parsed.panNumber;
     for (const key of REQUIRED_DISPLAY_FIELDS) {

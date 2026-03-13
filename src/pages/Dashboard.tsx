@@ -60,6 +60,21 @@ const Dashboard = () => {
               Welcome back{profile.name ? `, ${profile.name}` : ""}! 👋
             </h1>
             <p className="mt-1 text-muted-foreground">Here's your scheme discovery dashboard.</p>
+            {newSchemeCount > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="mt-3 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent/10 p-3"
+              >
+                <Bell className="h-5 w-5 text-accent-foreground" />
+                <span className="text-sm font-medium">
+                  New schemes matching your profile: <strong>{newSchemeCount}</strong>
+                </span>
+                <Button size="sm" variant="outline" className="ml-auto" onClick={() => navigate("/schemes")}>
+                  View <ArrowRight className="ml-1 h-3 w-3" />
+                </Button>
+              </motion.div>
+            )}
           </div>
 
           {/* Quick Actions */}

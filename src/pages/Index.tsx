@@ -1,7 +1,8 @@
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { FileText, MessageSquare, Search, Shield, Smartphone, Zap, ChevronRight, ArrowRight, CheckCircle2, Lock, Users } from "lucide-react";
+import { FileText, MessageSquare, Search, Smartphone, Zap, ChevronRight, ArrowRight, CheckCircle2, Lock, Users } from "lucide-react";
+import logo from "@/assets/FindMyScheme_logo.png";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 
 const Index = () => {
@@ -14,9 +15,7 @@ const Index = () => {
         <nav className="sticky top-0 z-50 glass-nav">
           <div className="container flex h-16 items-center justify-between">
             <Link to="/" className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-primary shadow-sm">
-                <Shield className="h-[18px] w-[18px] text-primary-foreground" />
-              </div>
+              <img src={logo} alt="FindMyScheme" className="h-9 w-9 object-contain" />
               <span className="text-[17px] font-bold tracking-tight text-foreground">FindMyScheme</span>
             </Link>
             <Button onClick={() => navigate("/login")} size="sm" className="rounded-full px-5 shadow-sm">
@@ -144,7 +143,7 @@ const Index = () => {
             </motion.div>
             <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {[
-                { icon: Shield, title: "Secure & Private", desc: "Your documents are processed in-browser using on-device OCR. We never store raw files on any server." },
+                { icon: Zap, title: "Secure & Private", desc: "Your documents are processed in-browser using on-device OCR. We never store raw files on any server." },
                 { icon: Smartphone, title: "Works Everywhere", desc: "Responsive PWA that works seamlessly on any device — desktop, tablet, or mobile." },
                 { icon: Zap, title: "AI-Powered Matching", desc: "Smart algorithms match your profile against 500+ government schemes for accurate results." },
               ].map((feature, i) => (
@@ -192,9 +191,7 @@ const Index = () => {
         <footer className="border-t py-10">
           <div className="container flex flex-col items-center justify-between gap-4 text-sm text-muted-foreground sm:flex-row">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-7 w-7 items-center justify-center rounded-lg gradient-primary">
-                <Shield className="h-3.5 w-3.5 text-primary-foreground" />
-              </div>
+              <img src={logo} alt="FindMyScheme" className="h-7 w-7 object-contain" />
               <span className="font-semibold text-foreground">FindMyScheme</span>
             </div>
             <p>© 2026 FindMyScheme. Empowering citizens with information.</p>

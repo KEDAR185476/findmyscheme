@@ -16,6 +16,7 @@ interface DocumentUploadCardProps {
   status: "idle" | "processing" | "done" | "error";
   progress: number;
   fieldCount: number;
+  avgConfidence?: number;
   fileName?: string;
   disabled: boolean;
   onFileSelect: (file: File) => void;

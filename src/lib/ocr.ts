@@ -52,6 +52,19 @@ export function parseExtractedText(
       const year = y.length === 2 ? `19${y}` : y;
       fields.dob = { value: `${year}-${m.padStart(2, "0")}-${d.padStart(2, "0")}`, confidence: 0.75 };
     }
+    // Compute age from DOB
+    if (fields.dob) {
+      try {
+        const dob = new Date(fields.dob.value);
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const monthDiff = today.getMonth() - dob.getMonth();
+        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) age--;
+        if (age > 0 && age < 150) {
+          fields.age = { value: String(age), confidence: fields.dob.confidence };
+        }
+      } catch {}
+    }
   }
 
   // Gender

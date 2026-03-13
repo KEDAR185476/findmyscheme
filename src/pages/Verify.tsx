@@ -25,7 +25,7 @@ const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
 // Ordered list of fields to display — ensures consistent layout
 const FIELD_ORDER = [
   "name", "dob", "age", "gender", "address", "state", "district",
-  "income", "category", "casteCategory", "aadhaarNumber", "panNumber",
+  "income", "category", "casteCategory", "residency",
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -36,11 +36,10 @@ const FIELD_LABELS: Record<string, string> = {
   address: "Address",
   state: "State",
   district: "District",
-  aadhaarNumber: "Aadhaar Number",
-  panNumber: "PAN Number",
   income: "Annual Income (₹)",
   category: "Income Category (APL/BPL/AAY)",
   casteCategory: "Caste Category",
+  residency: "Area of Residence",
 };
 
 // The minimum set of fields to always show, even if not extracted

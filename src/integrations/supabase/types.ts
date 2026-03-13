@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      identity_fingerprints: {
+        Row: {
+          created_at: string
+          duplicate_risk_level: string
+          fingerprint_hash: string
+          flagged: boolean
+          fraud_risk_reasons: string[] | null
+          fraud_risk_score: number
+          id: string
+          partial_dob_hash: string | null
+          partial_name_hash: string | null
+          partial_phone_hash: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duplicate_risk_level?: string
+          fingerprint_hash: string
+          flagged?: boolean
+          fraud_risk_reasons?: string[] | null
+          fraud_risk_score?: number
+          id?: string
+          partial_dob_hash?: string | null
+          partial_name_hash?: string | null
+          partial_phone_hash?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duplicate_risk_level?: string
+          fingerprint_hash?: string
+          flagged?: boolean
+          fraud_risk_reasons?: string[] | null
+          fraud_risk_score?: number
+          id?: string
+          partial_dob_hash?: string | null
+          partial_name_hash?: string | null
+          partial_phone_hash?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       otp_codes: {
         Row: {
           code: string

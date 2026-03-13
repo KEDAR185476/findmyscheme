@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CheckCircle2, AlertCircle, ArrowRight, Trash2, Lock } from "lucide-react";
+import { CheckCircle2, AlertCircle, ArrowRight, Trash2, Lock, ShieldAlert, Loader2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { INDIAN_STATES } from "@/types";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { AppHeader } from "@/components/AppHeader";
 
@@ -47,10 +48,12 @@ const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "incom
 
 const Verify = () => {
   const navigate = useNavigate();
-  const { setProfile, syncProfileToServer } = useAuth();
+  const { auth, setProfile, syncProfileToServer } = useAuth();
   const [fields, setFields] = useState<Record<string, { value: string; confidence: number }>>({});
   const [processing, setProcessing] = useState(true);
   const [docsCleared, setDocsCleared] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationAlerts, setVerificationAlerts] = useState<string[]>([]);
 
   useEffect(() => {
     const ocrFields = localStorage.getItem("fms_ocr_fields");
@@ -58,6 +61,8 @@ const Verify = () => {
     if (ocrFields) {
       try { parsed = JSON.parse(ocrFields); } catch (e) { console.error("Failed to parse OCR fields:", e); }
     }
+    // Keep a backup with sensitive fields for verification, then remove from display
+    localStorage.setItem("fms_ocr_fields_backup", JSON.stringify(parsed));
     delete parsed.aadhaarNumber;
     delete parsed.panNumber;
     for (const key of REQUIRED_DISPLAY_FIELDS) {
@@ -97,13 +102,62 @@ const Verify = () => {
     });
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     const updates: Record<string, any> = {};
     for (const [key, val] of Object.entries(fields)) {
       if (key === "age") continue;
       if (key === "income") updates[key] = val.value ? parseInt(val.value) : null;
       else updates[key] = val.value;
     }
+
+    // Run identity verification silently
+    setVerifying(true);
+    setVerificationAlerts([]);
+
+    try {
+      const ocrFieldsRaw = localStorage.getItem("fms_ocr_fields_backup");
+      let ocrFields: Record<string, { value: string; confidence: number }> = {};
+      try { ocrFields = ocrFieldsRaw ? JSON.parse(ocrFieldsRaw) : {}; } catch {}
+
+      const { data: verdict, error } = await supabase.functions.invoke("verify-identity", {
+        body: {
+          phone: auth.phone,
+          profile: { ...updates, age: fields.age?.value ? parseInt(fields.age.value) : null },
+          ocrFields,
+        },
+      });
+
+      if (!error && verdict) {
+        // Store verification metadata locally (non-sensitive)
+        localStorage.setItem("fms_verification", JSON.stringify({
+          safe: verdict.safe,
+          duplicateLevel: verdict.duplicate?.level,
+          fraudLevel: verdict.fraud?.level,
+          fraudScore: verdict.fraud?.score,
+        }));
+
+        if (verdict.alerts && verdict.alerts.length > 0) {
+          setVerificationAlerts(verdict.alerts);
+
+          // High risk: block progression
+          if (!verdict.safe) {
+            setVerifying(false);
+            toast.error("Identity verification flagged. Please review your details.");
+            return;
+          }
+
+          // Medium risk: warn but allow
+          verdict.alerts.forEach((a: string) => toast.warning(a, { duration: 6000 }));
+        }
+      }
+    } catch (err) {
+      console.error("Verification check failed (non-blocking):", err);
+      // Non-blocking: allow user to proceed even if verification service fails
+    }
+
+    setVerifying(false);
+    localStorage.removeItem("fms_ocr_fields_backup");
+
     setProfile(prev => ({ ...prev, ...updates }));
     syncProfileToServer();
     navigate("/questions");
@@ -249,10 +303,33 @@ const Verify = () => {
             </Card>
           </StaggerItem>
 
+          {/* Verification alerts */}
+          {verificationAlerts.length > 0 && (
+            <StaggerItem>
+              <div className="mt-4 space-y-2">
+                {verificationAlerts.map((alert, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 px-5 py-3"
+                  >
+                    <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                    <p className="text-sm text-warning-foreground/90">{alert}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </StaggerItem>
+          )}
+
           <StaggerItem>
             <div className="mt-8 flex justify-end">
-              <Button onClick={handleConfirm} size="lg" className="h-12 rounded-lg px-8 shadow-sm">
-                Confirm & Continue <ArrowRight className="ml-2 h-4 w-4" />
+              <Button onClick={handleConfirm} size="lg" className="h-12 rounded-lg px-8 shadow-sm" disabled={verifying}>
+                {verifying ? (
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
+                ) : (
+                  <>Confirm & Continue <ArrowRight className="ml-2 h-4 w-4" /></>
+                )}
               </Button>
             </div>
           </StaggerItem>

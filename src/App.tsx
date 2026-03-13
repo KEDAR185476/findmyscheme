@@ -12,6 +12,8 @@ import Questions from "./pages/Questions.tsx";
 import Schemes from "./pages/Schemes.tsx";
 import Dashboard from "./pages/Dashboard.tsx";
 import ExplainEligibility from "./pages/ExplainEligibility.tsx";
+import Simulator from "./pages/Simulator.tsx";
+import Timeline from "./pages/Timeline.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -32,6 +34,8 @@ const App = () => (
             <Route path="/schemes" element={<Schemes />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/explain" element={<ExplainEligibility />} />
+            <Route path="/simulator" element={<Simulator />} />
+            <Route path="/timeline" element={<Timeline />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

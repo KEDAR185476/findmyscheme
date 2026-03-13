@@ -112,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const syncProfileToServer = useCallback(async () => {
     if (!auth.phone) return;
     try {
-      const serverData = mapClientToServer(profile);
+      const serverData = { ...mapClientToServer(profile), onboarding_complete: true };
       await supabase.functions.invoke("profile", {
         body: { phone: auth.phone, action: "update", profile: serverData },
       });

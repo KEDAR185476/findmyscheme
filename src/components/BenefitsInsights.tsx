@@ -210,6 +210,7 @@ function OpportunityBar({
 
 export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsInsightsProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Parse benefit amounts from scheme data
   const benefitSchemes: BenefitScheme[] = eligibleSchemes

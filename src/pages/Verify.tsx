@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PageTransition, StaggerContainer, StaggerItem } from "@/components/PageTransition";
 import { AppHeader } from "@/components/AppHeader";
+import { useTranslation } from "react-i18next";
 
 const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
   const color = confidence >= 0.9 ? "text-success" : confidence >= 0.75 ? "text-warning" : "text-destructive";
@@ -30,24 +31,17 @@ const FIELD_ORDER = [
   "income", "category", "casteCategory", "residency",
 ];
 
-const FIELD_LABELS: Record<string, string> = {
-  name: "Full Name",
-  dob: "Date of Birth",
-  age: "Age",
-  gender: "Gender",
-  address: "Address",
-  state: "State",
-  district: "District",
-  income: "Annual Income (₹)",
-  category: "Income Category (APL/BPL/AAY)",
-  casteCategory: "Caste Category",
-  residency: "Area of Residence",
+const FIELD_LABEL_KEYS: Record<string, string> = {
+  name: "field_name", dob: "field_dob", age: "field_age", gender: "field_gender",
+  address: "field_address", state: "field_state", district: "field_district",
+  income: "field_income", category: "field_category", casteCategory: "field_caste", residency: "field_residency",
 };
 
 const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "income", "category", "residency"];
 
 const Verify = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { auth, setProfile, syncProfileToServer } = useAuth();
   const [fields, setFields] = useState<Record<string, { value: string; confidence: number }>>({});
   const [processing, setProcessing] = useState(true);
@@ -61,7 +55,6 @@ const Verify = () => {
     if (ocrFields) {
       try { parsed = JSON.parse(ocrFields); } catch (e) { console.error("Failed to parse OCR fields:", e); }
     }
-    // Keep a backup with sensitive fields for verification, then remove from display
     localStorage.setItem("fms_ocr_fields_backup", JSON.stringify(parsed));
     delete parsed.aadhaarNumber;
     delete parsed.panNumber;
@@ -110,7 +103,6 @@ const Verify = () => {
       else updates[key] = val.value;
     }
 
-    // Run identity verification silently
     setVerifying(true);
     setVerificationAlerts([]);
 
@@ -128,31 +120,23 @@ const Verify = () => {
       });
 
       if (!error && verdict) {
-        // Store verification metadata locally (non-sensitive)
         localStorage.setItem("fms_verification", JSON.stringify({
-          safe: verdict.safe,
-          duplicateLevel: verdict.duplicate?.level,
-          fraudLevel: verdict.fraud?.level,
-          fraudScore: verdict.fraud?.score,
+          safe: verdict.safe, duplicateLevel: verdict.duplicate?.level,
+          fraudLevel: verdict.fraud?.level, fraudScore: verdict.fraud?.score,
         }));
 
         if (verdict.alerts && verdict.alerts.length > 0) {
           setVerificationAlerts(verdict.alerts);
-
-          // High risk: block progression
           if (!verdict.safe) {
             setVerifying(false);
-            toast.error("Identity verification flagged. Please review your details.");
+            toast.error(t("identity_flagged"));
             return;
           }
-
-          // Medium risk: warn but allow
           verdict.alerts.forEach((a: string) => toast.warning(a, { duration: 6000 }));
         }
       }
     } catch (err) {
       console.error("Verification check failed (non-blocking):", err);
-      // Non-blocking: allow user to proceed even if verification service fails
     }
 
     setVerifying(false);
@@ -161,7 +145,7 @@ const Verify = () => {
     setProfile(prev => ({ ...prev, ...updates }));
     syncProfileToServer();
     navigate("/questions");
-    toast.success("Profile verified! Let's refine your eligibility.");
+    toast.success(t("profile_verified"));
   };
 
   const sortedFields = Object.entries(fields).sort(([a], [b]) => {
@@ -177,8 +161,8 @@ const Verify = () => {
           <div className="mx-auto mb-6 h-16 w-16">
             <div className="h-full w-full animate-spin rounded-full border-[3px] border-muted border-t-primary" />
           </div>
-          <h2 className="text-xl font-semibold">Loading Extracted Data...</h2>
-          <p className="mt-2 text-muted-foreground">Preparing verification screen</p>
+          <h2 className="text-xl font-semibold">{t("loading_data")}</h2>
+          <p className="mt-2 text-muted-foreground">{t("preparing_verify")}</p>
         </motion.div>
       </div>
     );
@@ -192,24 +176,18 @@ const Verify = () => {
         <StaggerContainer>
           <StaggerItem>
             <div className="mb-2">
-              <p className="text-sm font-semibold uppercase tracking-wider text-primary">Step 2 of 3</p>
+              <p className="text-sm font-semibold uppercase tracking-wider text-primary">{t("verify_step")}</p>
             </div>
-            <h1 className="mb-3 text-2xl font-bold tracking-tight md:text-3xl">Verify Extracted Information</h1>
-            <p className="mb-5 text-muted-foreground leading-relaxed">
-              Review the details extracted from your documents. Edit any field that looks incorrect.
-            </p>
+            <h1 className="mb-3 text-2xl font-bold tracking-tight md:text-3xl">{t("verify_title")}</h1>
+            <p className="mb-5 text-muted-foreground leading-relaxed">{t("verify_desc")}</p>
           </StaggerItem>
 
           {docsCleared && (
             <StaggerItem>
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-5 flex items-center gap-3 rounded-xl border border-success/20 bg-success/5 px-5 py-3"
-              >
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-5 flex items-center gap-3 rounded-xl border border-success/20 bg-success/5 px-5 py-3">
                 <Trash2 className="h-5 w-5 text-success shrink-0" />
                 <p className="text-sm text-success">
-                  <strong>Documents deleted.</strong> Your uploaded files have been securely removed.
+                  <strong>{t("docs_deleted")}</strong> {t("docs_deleted_desc")}
                 </p>
               </motion.div>
             </StaggerItem>
@@ -219,7 +197,7 @@ const Verify = () => {
             <div className="mb-6 flex items-center gap-3 rounded-xl border border-primary/15 bg-primary/5 px-5 py-3">
               <Lock className="h-5 w-5 text-primary shrink-0" />
               <p className="text-sm text-primary/90">
-                <strong>Privacy first:</strong> Only derived attributes are stored — never your original documents.
+                <strong>{t("privacy_first")}</strong> {t("privacy_desc")}
               </p>
             </div>
           </StaggerItem>
@@ -227,50 +205,45 @@ const Verify = () => {
           <StaggerItem>
             <Card className="shadow-card border-border/60">
               <CardHeader className="pb-4">
-                <CardTitle className="text-lg">Your Details</CardTitle>
+                <CardTitle className="text-lg">{t("your_details")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-5">
                 {sortedFields.map(([key, { value, confidence }]) => (
-                  <motion.div
-                    key={key}
-                    initial={{ opacity: 0, x: -8 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    className="space-y-2"
-                  >
+                  <motion.div key={key} initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label htmlFor={key} className="text-sm font-medium">{FIELD_LABELS[key] || key}</Label>
+                      <Label htmlFor={key} className="text-sm font-medium">{t(FIELD_LABEL_KEYS[key] || key)}</Label>
                       {confidence > 0 && <ConfidenceBadge confidence={confidence} />}
                     </div>
                     {key === "gender" ? (
                       <Select value={value} onValueChange={v => updateField(key, v)}>
-                        <SelectTrigger className="h-11"><SelectValue placeholder="Select gender" /></SelectTrigger>
+                        <SelectTrigger className="h-11"><SelectValue placeholder={t("select_gender")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="male">Male</SelectItem>
-                          <SelectItem value="female">Female</SelectItem>
-                          <SelectItem value="other">Other</SelectItem>
+                          <SelectItem value="male">{t("male")}</SelectItem>
+                          <SelectItem value="female">{t("female")}</SelectItem>
+                          <SelectItem value="other">{t("other")}</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : key === "state" ? (
                       <Select value={value} onValueChange={v => updateField(key, v)}>
-                        <SelectTrigger className="h-11"><SelectValue placeholder="Select state" /></SelectTrigger>
+                        <SelectTrigger className="h-11"><SelectValue placeholder={t("select_state")} /></SelectTrigger>
                         <SelectContent>
                           {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                         </SelectContent>
                       </Select>
                     ) : key === "category" ? (
                       <Select value={value} onValueChange={v => updateField(key, v)}>
-                        <SelectTrigger className="h-11"><SelectValue placeholder="Select income category" /></SelectTrigger>
+                        <SelectTrigger className="h-11"><SelectValue placeholder={t("select_category")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="APL">APL (Above Poverty Line)</SelectItem>
-                          <SelectItem value="BPL">BPL (Below Poverty Line)</SelectItem>
-                          <SelectItem value="AAY">AAY (Antyodaya Anna Yojana)</SelectItem>
+                          <SelectItem value="APL">APL</SelectItem>
+                          <SelectItem value="BPL">BPL</SelectItem>
+                          <SelectItem value="AAY">AAY</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : key === "casteCategory" ? (
                       <Select value={value} onValueChange={v => updateField(key, v)}>
-                        <SelectTrigger className="h-11"><SelectValue placeholder="Select caste category" /></SelectTrigger>
+                        <SelectTrigger className="h-11"><SelectValue placeholder={t("select_caste")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="General">General</SelectItem>
+                          <SelectItem value="General">{t("general")}</SelectItem>
                           <SelectItem value="OBC">OBC</SelectItem>
                           <SelectItem value="SC">SC</SelectItem>
                           <SelectItem value="ST">ST</SelectItem>
@@ -278,15 +251,15 @@ const Verify = () => {
                       </Select>
                     ) : key === "residency" ? (
                       <Select value={value} onValueChange={v => updateField(key, v)}>
-                        <SelectTrigger className="h-11"><SelectValue placeholder="Select area type" /></SelectTrigger>
+                        <SelectTrigger className="h-11"><SelectValue placeholder={t("select_area")} /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="rural">Rural</SelectItem>
-                          <SelectItem value="urban">Urban</SelectItem>
-                          <SelectItem value="semi-urban">Semi-Urban</SelectItem>
+                          <SelectItem value="rural">{t("rural")}</SelectItem>
+                          <SelectItem value="urban">{t("urban")}</SelectItem>
+                          <SelectItem value="semi-urban">{t("semi_urban")}</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : key === "age" ? (
-                      <Input id={key} type="number" value={value} readOnly className="h-11 bg-muted/30" title="Computed from Date of Birth" />
+                      <Input id={key} type="number" value={value} readOnly className="h-11 bg-muted/30" />
                     ) : (
                       <Input
                         id={key}
@@ -294,7 +267,7 @@ const Verify = () => {
                         value={value}
                         onChange={e => updateField(key, e.target.value)}
                         className={`h-11 ${confidence > 0 && confidence < 0.75 ? "border-warning" : ""}`}
-                        placeholder={FIELD_LABELS[key]}
+                        placeholder={t(FIELD_LABEL_KEYS[key] || key)}
                       />
                     )}
                   </motion.div>
@@ -303,17 +276,11 @@ const Verify = () => {
             </Card>
           </StaggerItem>
 
-          {/* Verification alerts */}
           {verificationAlerts.length > 0 && (
             <StaggerItem>
               <div className="mt-4 space-y-2">
                 {verificationAlerts.map((alert, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 px-5 py-3"
-                  >
+                  <motion.div key={i} initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="flex items-start gap-3 rounded-xl border border-warning/30 bg-warning/5 px-5 py-3">
                     <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
                     <p className="text-sm text-warning-foreground/90">{alert}</p>
                   </motion.div>
@@ -326,9 +293,9 @@ const Verify = () => {
             <div className="mt-8 flex justify-end">
               <Button onClick={handleConfirm} size="lg" className="h-12 rounded-lg px-8 shadow-sm" disabled={verifying}>
                 {verifying ? (
-                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Verifying...</>
+                  <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> {t("verifying")}</>
                 ) : (
-                  <>Confirm & Continue <ArrowRight className="ml-2 h-4 w-4" /></>
+                  <>{t("confirm_continue")} <ArrowRight className="ml-2 h-4 w-4" /></>
                 )}
               </Button>
             </div>

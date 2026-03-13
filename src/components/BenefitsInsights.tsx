@@ -291,7 +291,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
                   ₹{animatedTotal.toLocaleString("en-IN")}
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Across {benefitSchemes.length} eligible scheme{benefitSchemes.length !== 1 ? "s" : ""}
+                  {t("across_schemes", { count: benefitSchemes.length })}
                 </p>
               </motion.div>
 

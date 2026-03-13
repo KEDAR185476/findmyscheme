@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search, Bell, TrendingUp, Gift, Target, Clock, IndianRupee, MapPin, Sparkles } from "lucide-react";
+import { RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search, Bell, TrendingUp, Gift, Target, Clock, IndianRupee, MapPin, Sparkles, FlaskConical, CalendarDays } from "lucide-react";
 import { BenefitsInsights } from "@/components/BenefitsInsights";
 import { useAuth } from "@/context/AuthContext";
 import { sampleSchemes, SCHEME_CATEGORIES } from "@/data/schemes";

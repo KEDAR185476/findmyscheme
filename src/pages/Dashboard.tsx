@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { RefreshCw, BookmarkCheck, LogOut, ArrowRight, FileText, Search, Bell, TrendingUp, Gift, Target, Clock, IndianRupee, MapPin, Sparkles } from "lucide-react";
+import { BenefitsInsights } from "@/components/BenefitsInsights";
 import { useAuth } from "@/context/AuthContext";
 import { sampleSchemes, SCHEME_CATEGORIES } from "@/data/schemes";
 import { computeAgeRange } from "@/types";
@@ -158,6 +159,15 @@ const Dashboard = () => {
               ))}
             </div>
           </StaggerItem>
+
+          {/* Benefits Insights */}
+          {eligible.length > 0 && (
+            <StaggerItem>
+              <div className="mb-8">
+                <BenefitsInsights eligibleSchemes={eligible} savedSchemeIds={savedSchemes} />
+              </div>
+            </StaggerItem>
+          )}
 
           {/* Quick Actions */}
           <StaggerItem>

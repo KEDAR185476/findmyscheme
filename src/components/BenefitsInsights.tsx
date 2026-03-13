@@ -265,7 +265,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
         <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/10">
           <TrendingUp className="h-4 w-4 text-primary" />
         </div>
-        <h2 className="text-lg font-semibold">Benefits Insights</h2>
+        <h2 className="text-lg font-semibold">{t("benefits_insights")}</h2>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">

@@ -1,19 +1,20 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Shield, Upload, Camera, CheckCircle2, FileText, CreditCard, FileCheck, ArrowRight, SkipForward, Loader2 } from "lucide-react";
+import { Shield, FileText, CreditCard, FileCheck, ArrowRight, SkipForward, Loader2, Lock } from "lucide-react";
 import { DocumentUpload } from "@/types";
 import { extractTextFromImage, parseExtractedText } from "@/lib/ocr";
+import { pdfToImage } from "@/lib/pdf-to-image";
+import { DocumentUploadCard } from "@/components/DocumentUploadCard";
 import { toast } from "sonner";
 
 const DOC_TYPES: { type: DocumentUpload["type"]; label: string; icon: typeof FileText; required: boolean }[] = [
   { type: "aadhaar", label: "Aadhaar Card", icon: Shield, required: true },
+  { type: "income", label: "Income Certificate", icon: FileCheck, required: true },
   { type: "pan", label: "PAN Card", icon: CreditCard, required: false },
   { type: "ration", label: "Ration Card", icon: FileText, required: false },
-  { type: "income", label: "Income Certificate", icon: FileCheck, required: false },
   { type: "caste", label: "Caste Certificate", icon: FileCheck, required: false },
 ];
 
@@ -26,7 +27,6 @@ interface DocState {
 
 const UploadPage = () => {
   const navigate = useNavigate();
-  const fileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const [documents, setDocuments] = useState<Record<string, DocState>>({});
 
   const uploadedCount = Object.values(documents).filter(d => d.status === "done").length;
@@ -34,24 +34,33 @@ const UploadPage = () => {
   const progress = (uploadedCount / DOC_TYPES.length) * 100;
 
   const handleFileSelect = async (type: string, file: File) => {
-    // Only accept images for OCR
-    if (!file.type.startsWith("image/")) {
-      toast.error("Please upload an image file (JPG, PNG) for OCR extraction");
-      return;
-    }
-
     setDocuments(prev => ({
       ...prev,
       [type]: { file, status: "processing", progress: 0, fields: {} },
     }));
 
     try {
-      const rawText = await extractTextFromImage(file, (p) => {
+      let imageInput: File | Blob = file;
+
+      // Convert PDF to image first
+      if (file.type === "application/pdf") {
         setDocuments(prev => ({
           ...prev,
-          [type]: { ...prev[type], progress: p },
+          [type]: { ...prev[type], progress: 5 },
         }));
-      });
+        const { blob } = await pdfToImage(file);
+        imageInput = blob;
+      }
+
+      const rawText = await extractTextFromImage(
+        imageInput instanceof File ? imageInput : new File([imageInput], "page.png", { type: "image/png" }),
+        (p) => {
+          setDocuments(prev => ({
+            ...prev,
+            [type]: { ...prev[type], progress: file.type === "application/pdf" ? 5 + Math.round(p * 0.95) : p },
+          }));
+        }
+      );
 
       const fields = parseExtractedText(rawText, type);
       const fieldCount = Object.keys(fields).length;
@@ -80,7 +89,6 @@ const UploadPage = () => {
       return;
     }
 
-    // Merge all extracted fields and store for Verify page
     const allFields: Record<string, { value: string; confidence: number }> = {};
     for (const [, doc] of Object.entries(documents)) {
       if (doc.status === "done") {
@@ -117,19 +125,23 @@ const UploadPage = () => {
       <div className="container max-w-2xl py-8">
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="mb-2 text-2xl font-bold">Upload Your Documents</h1>
-          <p className="mb-6 text-muted-foreground">
-            Upload images of your identity documents. Tesseract OCR will extract details automatically.
+          <p className="mb-4 text-muted-foreground">
+            Upload your identity documents as images (JPG, PNG) or PDFs. All processing happens securely in your browser.
           </p>
+
+          {/* Security badge */}
+          <div className="mb-6 flex items-center gap-2 rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+            <Lock className="h-4 w-4 text-primary" />
+            <p className="text-xs text-primary">
+              <strong>End-to-end secure:</strong> Documents are processed locally using on-device OCR. No files leave your browser.
+            </p>
+          </div>
 
           <Progress value={progress} className="mb-8 h-2" />
 
           <div className="space-y-4">
             {DOC_TYPES.map((doc, i) => {
               const state = documents[doc.type];
-              const isProcessing = state?.status === "processing";
-              const isDone = state?.status === "done";
-              const isError = state?.status === "error";
-
               return (
                 <motion.div
                   key={doc.type}
@@ -137,79 +149,18 @@ const UploadPage = () => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.08 }}
                 >
-                  <Card className={`transition-all ${isDone ? "border-success/50 bg-success/5" : isError ? "border-destructive/50 bg-destructive/5" : ""}`}>
-                    <CardContent className="flex items-center gap-4 p-4">
-                      <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${isDone ? "bg-success/10" : isProcessing ? "bg-primary/10" : "bg-muted"}`}>
-                        {isProcessing ? (
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        ) : isDone ? (
-                          <CheckCircle2 className="h-6 w-6 text-success" />
-                        ) : (
-                          <doc.icon className="h-6 w-6 text-muted-foreground" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{doc.label}</span>
-                          {doc.required && (
-                            <span className="rounded bg-accent/20 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-accent-foreground">
-                              Recommended
-                            </span>
-                          )}
-                        </div>
-                        {isProcessing && (
-                          <div className="mt-1.5">
-                            <Progress value={state.progress} className="h-1.5" />
-                            <p className="mt-0.5 text-xs text-muted-foreground">Processing... {state.progress}%</p>
-                          </div>
-                        )}
-                        {isDone && (
-                          <p className="mt-0.5 text-xs text-muted-foreground">
-                            {Object.keys(state.fields).length} fields extracted from {state.file?.name}
-                          </p>
-                        )}
-                        {isError && (
-                          <p className="mt-0.5 text-xs text-destructive">Processing failed — try again</p>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <input
-                          ref={el => { fileInputRefs.current[doc.type] = el; }}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) handleFileSelect(doc.type, file);
-                          }}
-                        />
-                        <Button
-                          size="sm"
-                          variant={isDone ? "outline" : "default"}
-                          onClick={() => fileInputRefs.current[doc.type]?.click()}
-                          disabled={isProcessing}
-                        >
-                          <Upload className="mr-1 h-4 w-4" />
-                          {isDone ? "Replace" : "Upload"}
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={isProcessing}
-                          onClick={() => {
-                            const input = fileInputRefs.current[doc.type];
-                            if (input) {
-                              input.setAttribute("capture", "environment");
-                              input.click();
-                              input.removeAttribute("capture");
-                            }
-                          }}
-                        >
-                          <Camera className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <DocumentUploadCard
+                    type={doc.type}
+                    label={doc.label}
+                    icon={doc.icon}
+                    required={doc.required}
+                    status={state?.status || "idle"}
+                    progress={state?.progress || 0}
+                    fieldCount={state?.fields ? Object.keys(state.fields).length : 0}
+                    fileName={state?.file?.name}
+                    disabled={processingCount > 0 && state?.status !== "processing"}
+                    onFileSelect={(file) => handleFileSelect(doc.type, file)}
+                  />
                 </motion.div>
               );
             })}

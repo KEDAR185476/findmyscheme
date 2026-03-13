@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from "react";
-import { UserProfile } from "@/types";
+import { UserProfile, computeAgeRange, computeIncomeRange } from "@/types";
 import { supabase } from "@/integrations/supabase/client";
 
 interface AuthState {
@@ -22,7 +22,8 @@ interface AuthContextType {
 
 const defaultProfile: UserProfile = {
   name: "", dob: "", gender: "", phone: "", address: "", state: "", district: "",
-  income: null, category: "", casteCategory: "", panNumber: "", aadhaarNumber: "",
+  income: null, category: "", casteCategory: "",
+  ageRange: "", incomeRange: "", occupationType: "", residency: "rural",
   employmentStatus: "", educationLevel: "", maritalStatus: "", hasDisability: false,
   landOwnership: "", hasBankAccount: false,
 };
@@ -41,8 +42,10 @@ const mapServerToClient = (sp: any): UserProfile => ({
   income: sp.income || null,
   category: sp.category || "",
   casteCategory: sp.caste_category || "",
-  panNumber: sp.pan_number || "",
-  aadhaarNumber: sp.aadhaar_number || "",
+  ageRange: sp.age_range || computeAgeRange(sp.dob || ""),
+  incomeRange: sp.income_range || computeIncomeRange(sp.income || null),
+  occupationType: sp.occupation_type || "",
+  residency: sp.residency || "rural",
   employmentStatus: sp.employment_status || "",
   educationLevel: sp.education_level || "",
   maritalStatus: sp.marital_status || "",
@@ -52,25 +55,33 @@ const mapServerToClient = (sp: any): UserProfile => ({
 });
 
 // Map client profile to server format
-const mapClientToServer = (cp: UserProfile) => ({
-  name: cp.name || null,
-  dob: cp.dob || null,
-  gender: cp.gender || null,
-  address: cp.address || null,
-  state: cp.state || null,
-  district: cp.district || null,
-  income: cp.income,
-  category: cp.category || null,
-  caste_category: cp.casteCategory || null,
-  pan_number: cp.panNumber || null,
-  aadhaar_number: cp.aadhaarNumber || null,
-  employment_status: cp.employmentStatus || null,
-  education_level: cp.educationLevel || null,
-  marital_status: cp.maritalStatus || null,
-  has_disability: cp.hasDisability,
-  land_ownership: cp.landOwnership || null,
-  has_bank_account: cp.hasBankAccount,
-});
+const mapClientToServer = (cp: UserProfile) => {
+  // Compute derived ranges before sending
+  const ageRange = computeAgeRange(cp.dob);
+  const incomeRange = computeIncomeRange(cp.income);
+  return {
+    name: cp.name || null,
+    dob: cp.dob || null,
+    gender: cp.gender || null,
+    address: cp.address || null,
+    state: cp.state || null,
+    district: cp.district || null,
+    income: cp.income,
+    category: cp.category || null,
+    caste_category: cp.casteCategory || null,
+    // Derived eligibility attributes only — no aadhaar/pan
+    age_range: ageRange || cp.ageRange || null,
+    income_range: incomeRange || cp.incomeRange || null,
+    occupation_type: cp.occupationType || null,
+    residency: cp.residency || "rural",
+    employment_status: cp.employmentStatus || null,
+    education_level: cp.educationLevel || null,
+    marital_status: cp.maritalStatus || null,
+    has_disability: cp.hasDisability,
+    land_ownership: cp.landOwnership || null,
+    has_bank_account: cp.hasBankAccount,
+  };
+};
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [auth, setAuth] = useState<AuthState>(() => {

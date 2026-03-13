@@ -25,7 +25,7 @@ const ConfidenceBadge = ({ confidence }: { confidence: number }) => {
 // Ordered list of fields to display — ensures consistent layout
 const FIELD_ORDER = [
   "name", "dob", "age", "gender", "address", "state", "district",
-  "income", "category", "casteCategory", "aadhaarNumber", "panNumber",
+  "income", "category", "casteCategory", "residency",
 ];
 
 const FIELD_LABELS: Record<string, string> = {
@@ -36,15 +36,14 @@ const FIELD_LABELS: Record<string, string> = {
   address: "Address",
   state: "State",
   district: "District",
-  aadhaarNumber: "Aadhaar Number",
-  panNumber: "PAN Number",
   income: "Annual Income (₹)",
   category: "Income Category (APL/BPL/AAY)",
   casteCategory: "Caste Category",
+  residency: "Area of Residence",
 };
 
 // The minimum set of fields to always show, even if not extracted
-const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "income", "category"];
+const REQUIRED_DISPLAY_FIELDS = ["name", "dob", "age", "gender", "state", "income", "category", "residency"];
 
 const Verify = () => {
   const navigate = useNavigate();
@@ -66,10 +65,14 @@ const Verify = () => {
       }
     }
 
+    // Remove sensitive document data — only derived attributes shown
+    delete parsed.aadhaarNumber;
+    delete parsed.panNumber;
+
     // Ensure all required display fields exist
     for (const key of REQUIRED_DISPLAY_FIELDS) {
       if (!parsed[key]) {
-        parsed[key] = { value: "", confidence: 0 };
+        parsed[key] = { value: key === "residency" ? "rural" : "", confidence: 0 };
       }
     }
 
@@ -232,6 +235,15 @@ const Verify = () => {
                         <SelectItem value="OBC">OBC</SelectItem>
                         <SelectItem value="SC">SC</SelectItem>
                         <SelectItem value="ST">ST</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  ) : key === "residency" ? (
+                    <Select value={value} onValueChange={v => updateField(key, v)}>
+                      <SelectTrigger><SelectValue placeholder="Select area type" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="rural">Rural</SelectItem>
+                        <SelectItem value="urban">Urban</SelectItem>
+                        <SelectItem value="semi-urban">Semi-Urban</SelectItem>
                       </SelectContent>
                     </Select>
                   ) : key === "age" ? (

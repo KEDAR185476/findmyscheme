@@ -338,7 +338,7 @@ export function BenefitsInsights({ eligibleSchemes, savedSchemeIds }: BenefitsIn
             </div>
 
             {/* Opportunity bar */}
-            <OpportunityBar claimed={claimedAmount} unclaimed={unclaimedAmount} />
+            <OpportunityBar claimed={claimedAmount} unclaimed={unclaimedAmount} appliedLabel={t("applied")} notAppliedLabel={t("not_applied")} />
 
             {/* Insight text */}
             <motion.div

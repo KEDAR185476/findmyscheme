@@ -160,6 +160,15 @@ const Dashboard = () => {
             </div>
           </StaggerItem>
 
+          {/* Benefits Insights */}
+          {eligible.length > 0 && (
+            <StaggerItem>
+              <div className="mb-8">
+                <BenefitsInsights eligibleSchemes={eligible} savedSchemeIds={savedSchemes} />
+              </div>
+            </StaggerItem>
+          )}
+
           {/* Quick Actions */}
           <StaggerItem>
             <div className="mb-8 grid gap-4 sm:grid-cols-3">

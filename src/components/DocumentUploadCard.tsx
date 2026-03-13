@@ -16,6 +16,7 @@ interface DocumentUploadCardProps {
   status: "idle" | "processing" | "done" | "error";
   progress: number;
   fieldCount: number;
+  avgConfidence?: number;
   fileName?: string;
   disabled: boolean;
   onFileSelect: (file: File) => void;
@@ -29,6 +30,7 @@ export const DocumentUploadCard = ({
   status,
   progress: ocrProgress,
   fieldCount,
+  avgConfidence,
   fileName,
   disabled,
   onFileSelect,
@@ -179,9 +181,17 @@ export const DocumentUploadCard = ({
                 </div>
               )}
               {isDone && (
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                  {fieldCount} field{fieldCount !== 1 ? "s" : ""} extracted from {fileName}
-                </p>
+                <div className="mt-0.5">
+                  <p className="truncate text-xs text-muted-foreground">
+                    {fieldCount} field{fieldCount !== 1 ? "s" : ""} extracted from {fileName}
+                  </p>
+                  {avgConfidence !== undefined && avgConfidence < 0.7 && (
+                    <p className="text-xs text-warning flex items-center gap-1 mt-0.5">
+                      <AlertTriangle className="h-3 w-3" />
+                      Low confidence — please review extracted data
+                    </p>
+                  )}
+                </div>
               )}
               {isError && (
                 <p className="mt-0.5 text-xs text-destructive">Processing failed — try again</p>

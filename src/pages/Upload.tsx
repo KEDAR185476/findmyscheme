@@ -25,6 +25,7 @@ interface DocState {
   status: "idle" | "processing" | "done" | "error";
   progress: number;
   fields: Record<string, { value: string; confidence: number }>;
+  avgConfidence: number;
 }
 
 const UploadPage = () => {
@@ -38,7 +39,7 @@ const UploadPage = () => {
   const handleFileSelect = async (type: string, file: File) => {
     setDocuments(prev => ({
       ...prev,
-      [type]: { file, status: "processing", progress: 0, fields: {} },
+      [type]: { file, status: "processing", progress: 0, fields: {}, avgConfidence: 0 },
     }));
 
     try {
@@ -61,11 +62,19 @@ const UploadPage = () => {
 
       const fields = await parseExtractedText(rawText, type);
       const fieldCount = Object.keys(fields).length;
-      setDocuments(prev => ({ ...prev, [type]: { file, status: "done", progress: 100, fields } }));
-      toast.success(`${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted`);
+      const confidences = Object.values(fields).map(f => f.confidence);
+      const avgConfidence = confidences.length > 0 ? confidences.reduce((a, b) => a + b, 0) / confidences.length : 0;
+
+      setDocuments(prev => ({ ...prev, [type]: { file, status: "done", progress: 100, fields, avgConfidence } }));
+
+      if (avgConfidence < 0.7) {
+        toast.warning(`${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted with low confidence. Please review on the next page.`);
+      } else {
+        toast.success(`${DOC_TYPES.find(d => d.type === type)?.label}: ${fieldCount} field${fieldCount !== 1 ? "s" : ""} extracted`);
+      }
     } catch (err) {
       console.error("OCR error:", err);
-      setDocuments(prev => ({ ...prev, [type]: { file, status: "error", progress: 0, fields: {} } }));
+      setDocuments(prev => ({ ...prev, [type]: { file, status: "error", progress: 0, fields: {}, avgConfidence: 0 } }));
       toast.error(`Failed to process ${DOC_TYPES.find(d => d.type === type)?.label}`);
     }
   };
@@ -142,6 +151,7 @@ const UploadPage = () => {
                     status={state?.status || "idle"}
                     progress={state?.progress || 0}
                     fieldCount={state?.fields ? Object.keys(state.fields).length : 0}
+                    avgConfidence={state?.avgConfidence}
                     fileName={state?.file?.name}
                     disabled={processingCount > 0 && state?.status !== "processing"}
                     onFileSelect={(file) => handleFileSelect(doc.type, file)}

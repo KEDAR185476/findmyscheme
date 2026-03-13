@@ -64,8 +64,8 @@ export type Database = {
       }
       user_profiles: {
         Row: {
-          aadhaar_number: string | null
           address: string | null
+          age_range: string | null
           caste_category: string | null
           category: string | null
           created_at: string
@@ -78,18 +78,20 @@ export type Database = {
           has_disability: boolean | null
           id: string
           income: number | null
+          income_range: string | null
           land_ownership: string | null
           marital_status: string | null
           name: string | null
+          occupation_type: string | null
           onboarding_complete: boolean | null
-          pan_number: string | null
           phone: string
+          residency: string | null
           state: string | null
           updated_at: string
         }
         Insert: {
-          aadhaar_number?: string | null
           address?: string | null
+          age_range?: string | null
           caste_category?: string | null
           category?: string | null
           created_at?: string
@@ -102,18 +104,20 @@ export type Database = {
           has_disability?: boolean | null
           id?: string
           income?: number | null
+          income_range?: string | null
           land_ownership?: string | null
           marital_status?: string | null
           name?: string | null
+          occupation_type?: string | null
           onboarding_complete?: boolean | null
-          pan_number?: string | null
           phone: string
+          residency?: string | null
           state?: string | null
           updated_at?: string
         }
         Update: {
-          aadhaar_number?: string | null
           address?: string | null
+          age_range?: string | null
           caste_category?: string | null
           category?: string | null
           created_at?: string
@@ -126,12 +130,14 @@ export type Database = {
           has_disability?: boolean | null
           id?: string
           income?: number | null
+          income_range?: string | null
           land_ownership?: string | null
           marital_status?: string | null
           name?: string | null
+          occupation_type?: string | null
           onboarding_complete?: boolean | null
-          pan_number?: string | null
           phone?: string
+          residency?: string | null
           state?: string | null
           updated_at?: string
         }

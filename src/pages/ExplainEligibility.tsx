@@ -373,9 +373,9 @@ function GapChatbot({ scheme, profile, gaps, t }: {
         </div>
 
         {messages.length === 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-2 mb-4">
             {suggestions.map(s => (
-              <Button key={s} size="sm" variant="outline" className="h-7 rounded-full text-[10px] border-primary/20" onClick={() => sendMessage(s)}>
+              <Button key={s} size="sm" variant="outline" className="h-8 rounded-full text-xs border-primary/20 hover:bg-primary/5" onClick={() => sendMessage(s)}>
                 {s}
               </Button>
             ))}
@@ -383,9 +383,9 @@ function GapChatbot({ scheme, profile, gaps, t }: {
         )}
 
         <form className="flex gap-2" onSubmit={e => { e.preventDefault(); sendMessage(input); }}>
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={t("ask_eligibility_placeholder")} className="h-8 text-xs rounded-lg flex-1" disabled={loading} />
-          <Button type="submit" size="icon" className="h-8 w-8 rounded-lg" disabled={!input.trim() || loading}>
-            <Send className="h-3 w-3" />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={t("ask_eligibility_placeholder")} className="h-10 text-sm rounded-xl flex-1" disabled={loading} />
+          <Button type="submit" size="icon" className="h-10 w-10 rounded-xl" disabled={!input.trim() || loading}>
+            <Send className="h-4 w-4" />
           </Button>
         </form>
       </CardContent>

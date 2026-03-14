@@ -439,7 +439,7 @@ const ExplainEligibility = () => {
             </div>
           </StaggerItem>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
             <div className="space-y-6">
               <StaggerItem>
                 <Card className="border-border/60 shadow-soft overflow-hidden">

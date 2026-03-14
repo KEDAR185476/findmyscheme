@@ -126,11 +126,11 @@ BAD (narrow, wastes question budget):
 - Female + age 18-45 → women empowerment schemes
 - DO NOT ask questions whose answers can be logically derived
 
-### 5. EARLY COMPLETION
-Set complete=true as soon as you have:
-- Employment/occupation status (the single most impactful field)
+### 5. MINIMUM QUESTIONS REQUIREMENT
+You MUST ask at least 3 questions. Do NOT set complete=true before 3 questions.
+After 3 questions, set complete=true when you have:
+- Employment/occupation status
 - Plus any 2 additional eligibility attributes
-- OR if the profile already has 5+ filled fields
 
 ### 6. QUESTION PRIORITY ORDER
 If you must ask, prioritize in this order:

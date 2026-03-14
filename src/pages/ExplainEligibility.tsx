@@ -322,14 +322,19 @@ function GapChatbot({ scheme, profile, gaps, t }: {
   };
 
   return (
-    <Card className="border-border/60 shadow-soft">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">{t("eligibility_assistant")}</span>
+    <Card className="border-border/60 shadow-soft sticky top-24">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Bot className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div>
+            <span className="text-sm font-bold">{t("eligibility_assistant")}</span>
+            <p className="text-[10px] text-muted-foreground">{t("ask_about_eligibility")}</p>
+          </div>
         </div>
 
-        <div ref={chatRef} className="max-h-[240px] min-h-[100px] overflow-y-auto space-y-2.5 mb-3">
+        <div ref={chatRef} className="max-h-[420px] min-h-[200px] overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-4">{t("ask_about_eligibility")}</p>
           )}

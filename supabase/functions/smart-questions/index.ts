@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
 
     const { missing, filled, hasEnoughData } = analyzeMissingFields(profile || {});
 
-    // EARLY STOP: If we already have enough data OR hit the absolute max (4 questions)
-    if (hasEnoughData || questionsAsked >= 4 || missing.length === 0) {
+    // EARLY STOP: Only after minimum 3 questions asked AND (enough data OR hit max 4 OR no missing)
+    if (questionsAsked >= 3 && (hasEnoughData || questionsAsked >= 4 || missing.length === 0)) {
       return new Response(JSON.stringify({
         question: "",
         key: "",

@@ -96,10 +96,10 @@ ${JSON.stringify(profile, null, 2)}
 ## CRITICAL RULES — FOLLOW STRICTLY
 
 ### 1. ABSOLUTE QUESTION LIMIT
-- Ideal: 1-2 questions total
-- Maximum: 3 questions  
+- Minimum: 3 questions (ALWAYS ask at least 3 questions to build a complete profile)
+- Maximum: 4 questions  
 - Hard cap: 4 questions (system will force-stop after this)
-- If you can determine eligibility NOW, set complete=true IMMEDIATELY
+- Do NOT set complete=true until at least 3 questions have been asked
 
 ### 2. NEVER RE-ASK KNOWN INFORMATION
 - If a field exists in the profile (even partially), do NOT ask about it

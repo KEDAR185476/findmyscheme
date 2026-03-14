@@ -334,7 +334,7 @@ function GapChatbot({ scheme, profile, gaps, t }: {
           </div>
         </div>
 
-        <div ref={chatRef} className="max-h-[420px] min-h-[200px] overflow-y-auto space-y-3 mb-4">
+        <div ref={chatRef} className="max-h-[520px] min-h-[320px] overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">

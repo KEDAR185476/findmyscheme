@@ -423,7 +423,7 @@ const ExplainEligibility = () => {
         </Button>
       </AppHeader>
 
-      <div className="container max-w-5xl py-8 md:py-10">
+      <div className="container max-w-6xl py-8 md:py-10">
         <StaggerContainer>
           <StaggerItem>
             <div className="mb-8">
@@ -439,7 +439,6 @@ const ExplainEligibility = () => {
             </div>
           </StaggerItem>
 
-          <div className="container max-w-6xl" />{/* bump outer width */}
           <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6">
               <StaggerItem>

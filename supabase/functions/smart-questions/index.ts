@@ -46,8 +46,8 @@ function analyzeMissingFields(profile: Record<string, unknown>): {
     }
   }
 
-  // We have enough data if employment status is known (the single most impactful field)
-  // plus at least 4 OCR fields are present
+  // We need at least 3 questions answered before allowing completion
+  // hasEnoughData is only true after the frontend enforces minimum questions
   const hasEmployment = filled.includes("employmentStatus");
   const ocrCount = ocrFields.filter(f => filled.includes(f)).length;
   const hasEnoughData = hasEmployment && ocrCount >= 4;
@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
 
     const { missing, filled, hasEnoughData } = analyzeMissingFields(profile || {});
 
-    // EARLY STOP: If we already have enough data OR hit the absolute max (4 questions)
-    if (hasEnoughData || questionsAsked >= 4 || missing.length === 0) {
+    // EARLY STOP: Only after minimum 3 questions asked AND (enough data OR hit max 4 OR no missing)
+    if (questionsAsked >= 3 && (hasEnoughData || questionsAsked >= 4 || missing.length === 0)) {
       return new Response(JSON.stringify({
         question: "",
         key: "",
@@ -96,10 +96,10 @@ ${JSON.stringify(profile, null, 2)}
 ## CRITICAL RULES — FOLLOW STRICTLY
 
 ### 1. ABSOLUTE QUESTION LIMIT
-- Ideal: 1-2 questions total
-- Maximum: 3 questions  
+- Minimum: 3 questions (ALWAYS ask at least 3 questions to build a complete profile)
+- Maximum: 4 questions  
 - Hard cap: 4 questions (system will force-stop after this)
-- If you can determine eligibility NOW, set complete=true IMMEDIATELY
+- Do NOT set complete=true until at least 3 questions have been asked
 
 ### 2. NEVER RE-ASK KNOWN INFORMATION
 - If a field exists in the profile (even partially), do NOT ask about it
@@ -126,11 +126,11 @@ BAD (narrow, wastes question budget):
 - Female + age 18-45 → women empowerment schemes
 - DO NOT ask questions whose answers can be logically derived
 
-### 5. EARLY COMPLETION
-Set complete=true as soon as you have:
-- Employment/occupation status (the single most impactful field)
+### 5. MINIMUM QUESTIONS REQUIREMENT
+You MUST ask at least 3 questions. Do NOT set complete=true before 3 questions.
+After 3 questions, set complete=true when you have:
+- Employment/occupation status
 - Plus any 2 additional eligibility attributes
-- OR if the profile already has 5+ filled fields
 
 ### 6. QUESTION PRIORITY ORDER
 If you must ask, prioritize in this order:

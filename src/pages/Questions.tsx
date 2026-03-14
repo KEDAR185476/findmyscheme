@@ -43,7 +43,7 @@ const Questions = () => {
   const chatRef = useRef<HTMLDivElement>(null);
   const initialized = useRef(false);
 
-  const progress = Math.min((questionsAsked / 3) * 100, 100);
+  const progress = Math.min((questionsAsked / 4) * 100, 100);
 
   const completeAndNavigate = useCallback((greeting?: string) => {
     syncProfileToServer();

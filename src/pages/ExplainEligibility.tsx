@@ -322,29 +322,40 @@ function GapChatbot({ scheme, profile, gaps, t }: {
   };
 
   return (
-    <Card className="border-border/60 shadow-soft">
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Bot className="h-4 w-4 text-primary" />
-          <span className="text-sm font-semibold">{t("eligibility_assistant")}</span>
+    <Card className="border-border/60 shadow-soft sticky top-24">
+      <CardContent className="p-5">
+        <div className="flex items-center gap-2.5 mb-4">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Bot className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div>
+            <span className="text-sm font-bold">{t("eligibility_assistant")}</span>
+            <p className="text-[10px] text-muted-foreground">{t("ask_about_eligibility")}</p>
+          </div>
         </div>
 
-        <div ref={chatRef} className="max-h-[240px] min-h-[100px] overflow-y-auto space-y-2.5 mb-3">
+        <div ref={chatRef} className="max-h-[420px] min-h-[200px] overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">{t("ask_about_eligibility")}</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">{t("ask_about_eligibility")}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Ask anything about scheme eligibility</p>
+            </div>
           )}
           {messages.map(msg => (
-            <div key={msg.id} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-              <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+            <div key={msg.id} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                 msg.role === "assistant" ? "bg-primary/10 text-primary" : "bg-muted"
               }`}>
-                {msg.role === "assistant" ? <Bot className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                {msg.role === "assistant" ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
               </div>
-              <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+              <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
                 msg.role === "assistant" ? "bg-card border" : "gradient-primary text-primary-foreground"
               }`}>
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-xs prose-neutral dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_li]:m-0">
+                  <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_li]:m-0">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : msg.content}
@@ -352,19 +363,19 @@ function GapChatbot({ scheme, profile, gaps, t }: {
             </div>
           ))}
           {loading && (
-            <div className="flex gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <div className="flex gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
               </div>
-              <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">{t("thinking")}</div>
+              <div className="rounded-xl border bg-card px-3.5 py-2.5 text-sm text-muted-foreground">{t("thinking")}</div>
             </div>
           )}
         </div>
 
         {messages.length === 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-3">
+          <div className="flex flex-wrap gap-2 mb-4">
             {suggestions.map(s => (
-              <Button key={s} size="sm" variant="outline" className="h-7 rounded-full text-[10px] border-primary/20" onClick={() => sendMessage(s)}>
+              <Button key={s} size="sm" variant="outline" className="h-8 rounded-full text-xs border-primary/20 hover:bg-primary/5" onClick={() => sendMessage(s)}>
                 {s}
               </Button>
             ))}
@@ -372,9 +383,9 @@ function GapChatbot({ scheme, profile, gaps, t }: {
         )}
 
         <form className="flex gap-2" onSubmit={e => { e.preventDefault(); sendMessage(input); }}>
-          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={t("ask_eligibility_placeholder")} className="h-8 text-xs rounded-lg flex-1" disabled={loading} />
-          <Button type="submit" size="icon" className="h-8 w-8 rounded-lg" disabled={!input.trim() || loading}>
-            <Send className="h-3 w-3" />
+          <Input value={input} onChange={e => setInput(e.target.value)} placeholder={t("ask_eligibility_placeholder")} className="h-10 text-sm rounded-xl flex-1" disabled={loading} />
+          <Button type="submit" size="icon" className="h-10 w-10 rounded-xl" disabled={!input.trim() || loading}>
+            <Send className="h-4 w-4" />
           </Button>
         </form>
       </CardContent>
@@ -428,7 +439,7 @@ const ExplainEligibility = () => {
             </div>
           </StaggerItem>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
+          <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
             <div className="space-y-6">
               <StaggerItem>
                 <Card className="border-border/60 shadow-soft overflow-hidden">

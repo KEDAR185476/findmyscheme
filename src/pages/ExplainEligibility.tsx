@@ -334,7 +334,7 @@ function GapChatbot({ scheme, profile, gaps, t }: {
           </div>
         </div>
 
-        <div ref={chatRef} className="max-h-[420px] min-h-[200px] overflow-y-auto space-y-3 mb-4">
+        <div ref={chatRef} className="max-h-[520px] min-h-[320px] overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
@@ -423,7 +423,7 @@ const ExplainEligibility = () => {
         </Button>
       </AppHeader>
 
-      <div className="container max-w-5xl py-8 md:py-10">
+      <div className="container max-w-6xl py-8 md:py-10">
         <StaggerContainer>
           <StaggerItem>
             <div className="mb-8">
@@ -439,7 +439,7 @@ const ExplainEligibility = () => {
             </div>
           </StaggerItem>
 
-          <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
+          <div className="grid gap-6 lg:grid-cols-2">
             <div className="space-y-6">
               <StaggerItem>
                 <Card className="border-border/60 shadow-soft overflow-hidden">

@@ -46,8 +46,8 @@ function analyzeMissingFields(profile: Record<string, unknown>): {
     }
   }
 
-  // We have enough data if employment status is known (the single most impactful field)
-  // plus at least 4 OCR fields are present
+  // We need at least 3 questions answered before allowing completion
+  // hasEnoughData is only true after the frontend enforces minimum questions
   const hasEmployment = filled.includes("employmentStatus");
   const ocrCount = ocrFields.filter(f => filled.includes(f)).length;
   const hasEnoughData = hasEmployment && ocrCount >= 4;

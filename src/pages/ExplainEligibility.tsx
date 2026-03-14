@@ -336,20 +336,26 @@ function GapChatbot({ scheme, profile, gaps, t }: {
 
         <div ref={chatRef} className="max-h-[420px] min-h-[200px] overflow-y-auto space-y-3 mb-4">
           {messages.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-4">{t("ask_about_eligibility")}</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 mb-3">
+                <Sparkles className="h-5 w-5 text-primary" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">{t("ask_about_eligibility")}</p>
+              <p className="text-xs text-muted-foreground/60 mt-1">Ask anything about scheme eligibility</p>
+            </div>
           )}
           {messages.map(msg => (
-            <div key={msg.id} className={`flex gap-2 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-              <div className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${
+            <div key={msg.id} className={`flex gap-2.5 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
+              <div className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${
                 msg.role === "assistant" ? "bg-primary/10 text-primary" : "bg-muted"
               }`}>
-                {msg.role === "assistant" ? <Bot className="h-3 w-3" /> : <User className="h-3 w-3" />}
+                {msg.role === "assistant" ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
               </div>
-              <div className={`max-w-[85%] rounded-xl px-3 py-2 text-xs leading-relaxed ${
+              <div className={`max-w-[85%] rounded-xl px-3.5 py-2.5 text-sm leading-relaxed ${
                 msg.role === "assistant" ? "bg-card border" : "gradient-primary text-primary-foreground"
               }`}>
                 {msg.role === "assistant" ? (
-                  <div className="prose prose-xs prose-neutral dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_li]:m-0">
+                  <div className="prose prose-sm prose-neutral dark:prose-invert max-w-none [&_p]:m-0 [&_ul]:m-0 [&_ol]:m-0 [&_li]:m-0">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 ) : msg.content}
@@ -357,11 +363,11 @@ function GapChatbot({ scheme, profile, gaps, t }: {
             </div>
           ))}
           {loading && (
-            <div className="flex gap-2">
-              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
-                <Loader2 className="h-3 w-3 animate-spin text-primary" />
+            <div className="flex gap-2.5">
+              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10">
+                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
               </div>
-              <div className="rounded-xl border bg-card px-3 py-2 text-xs text-muted-foreground">{t("thinking")}</div>
+              <div className="rounded-xl border bg-card px-3.5 py-2.5 text-sm text-muted-foreground">{t("thinking")}</div>
             </div>
           )}
         </div>
